@@ -3,3 +3,14 @@
 ./base
 ./rust
 
+echo ""
+echo "If all looks good, run the following to init systemd services:"
+echo ""
+echo "  ./systemd-all - enable all networks"
+echo ""
+echo "or:"
+echo ""
+echo "  ./systemd-mainnet - enable mainnet"
+echo "  ./systemd-testnet-10 - enable testnet-10"
+echo "  ./systemd-testnet-11 - enable testnet-11"
+echo ""

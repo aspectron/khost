@@ -9,5 +9,5 @@ elif [[ $1 == "status" ]]; then
 elif [[ $1 == "restart" ]]; then
 	sudo systemctl restart kaspa-mainnet kaspa-testnet-10 kaspa-testnet-11
 else
-    echo "Usage: kaspad start|stop"
+    echo "Usage: kaspad start|stop|status|restart"
 fi

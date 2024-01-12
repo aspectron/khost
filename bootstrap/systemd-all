@@ -1,0 +1,8 @@
+#!/bin/bash
+
+sudo cp ./resources/systemd/* /etc/systemd/system/
+sudo systemctl daemon-reload
+
+sudo systemctl enable kaspad-mainnet
+sudo systemctl enable kaspad-testnet-10
+sudo systemctl enable kaspad-testnet-11
