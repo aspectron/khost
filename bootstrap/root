@@ -1,0 +1,8 @@
+#!/bin/bash
+
+adduser kaspa
+chmod g+x /home/kaspa
+
+sudo apt update -y
+sudo apt upgrade -y
+

@@ -1,0 +1,11 @@
+[Unit]
+Description=Kaspa Testnet 11
+
+[Service]
+User=kaspa
+ExecStart=/home/kaspa/rusty-kaspa/target/release/kaspad --utxoindex --testnet --netsuffix=11 --listen=0.0.0.0:16411 --rpclisten=127.0.0.1:16310 --rpclisten-borsh=0.0.0.0:17310 --addpeer=104.11.218.90:16311 --perf-metrics --perf-metrics-interval-sec=1 --yes --disable-upnp
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
