@@ -1,6 +1,7 @@
 #!/bin/bash
 
 sudo apt install -y nginx
+sudo chmod g+rx /home/kaspa
 gpasswd -a www-data kaspa
 sudo cp ./resources/nginx/kaspa-wrpc-proxy.conf /etc/nginx/sites-available/
 pushd .

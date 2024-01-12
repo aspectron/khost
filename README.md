@@ -5,8 +5,7 @@ Bootstrap scripts for Linux Kaspa p2p Nodes
 As root:
 
 ```bash
-adduser kaspa
-chmod g+r /home/kaspa
+adduser -q kaspa
 ```
 
 As kaspa:
