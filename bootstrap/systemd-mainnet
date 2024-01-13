@@ -3,3 +3,4 @@
 sudo cp ./resources/systemd/kaspa-mainnet.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable kaspad-mainnet
+

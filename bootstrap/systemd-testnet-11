@@ -3,3 +3,4 @@
 sudo cp ./resources/systemd/kaspa-testnet-11.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable kaspad-testnet-11
+

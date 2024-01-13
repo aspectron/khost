@@ -3,7 +3,7 @@ Description=Kaspa Mainnet
 
 [Service]
 User=kaspa
-ExecStart=/home/kaspa/rusty-kaspa/target/release/kaspad --utxoindex --rpclisten=127.0.0.1:16110 --rpclisten-borsh=0.0.0.0:17110 --perf-metrics --perf-metrics-interval-sec=1 --yes --disable-upnp
+ExecStart=/home/kaspa/rusty-kaspa/target/release/kaspad --utxoindex --rpclisten=127.0.0.1:16110 --rpclisten-borsh=127.0.0.1:17110 --perf-metrics --perf-metrics-interval-sec=1 --yes --disable-upnp
 Restart=on-failure
 RestartSec=5
 
