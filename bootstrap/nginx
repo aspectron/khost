@@ -7,5 +7,5 @@ sudo cp ./resources/nginx/kaspa-wrpc-proxy.conf /etc/nginx/sites-available/
 
 pushd .
 cd /etc/nginx/sites-enabled
-ln -s ../sites-available/kaspa-wrpc-proxy.conf kaspa-wrpc-proxy.conf
+sudo ln -s ../sites-available/kaspa-wrpc-proxy.conf kaspa-wrpc-proxy.conf
 popd
