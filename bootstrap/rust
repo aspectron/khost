@@ -1,10 +1,13 @@
 #!/bin/bash
 
+pushd .
+cd ~/
+
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 
 git clone https://github.com/kaspanet/rusty-kaspa
-pushd .
 cd rusty-kaspa
 cargo build --release --bin kaspad
+
 popd
