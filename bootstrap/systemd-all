@@ -3,6 +3,6 @@
 sudo cp ./resources/systemd/* /etc/systemd/system/
 sudo systemctl daemon-reload
 
-sudo systemctl enable kaspad-mainnet
-sudo systemctl enable kaspad-testnet-10
-sudo systemctl enable kaspad-testnet-11
+sudo systemctl enable kaspa-mainnet
+sudo systemctl enable kaspa-testnet-10
+sudo systemctl enable kaspa-testnet-11
