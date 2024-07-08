@@ -1,0 +1,135 @@
+use crate::imports::*;
+
+pub struct System {
+    pub cpu_physical_cores: Option<usize>,
+    pub cpu_frequency: Option<u64>,
+    pub cpu_brand: Option<String>,
+    pub total_memory: u64,
+    pub long_os_version: Option<String>,
+    pub disk_usage: Option<DiskUsage>,
+}
+
+impl System {
+    pub fn ram_as_gb(&self) -> u64 {
+        self.total_memory / 1024 / 1024 / 1024
+    }
+}
+
+impl AsRef<System> for System {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl From<&System> for Vec<Content> {
+    fn from(system: &System) -> Self {
+        let mut rows = Vec::new();
+        if let Some(long_os_version) = &system.long_os_version {
+            rows.push(Content::field("OS:", long_os_version.clone()));
+            rows.push(Content::space());
+        }
+        if let Some(cpu_physical_cores) = system.cpu_physical_cores {
+            let mut info = format!("{cpu_physical_cores} Cores");
+            if let Some(cpu_frequency) = system.cpu_frequency {
+                info = format!("{info} @{:1.2} GHz", cpu_frequency as f64 / 1000.0);
+            }
+            rows.push(Content::field("CPU:", info));
+        }
+        if let Some(cpu_brand) = &system.cpu_brand {
+            rows.push(Content::field("", cpu_brand.clone()));
+        }
+        rows.push(Content::field(
+            "RAM:",
+            as_gb(system.total_memory as f64, false, false),
+        ));
+        if let Some(disk_usage) = &system.disk_usage {
+            let total = as_gb(disk_usage.total as f64, false, false);
+            let used = as_gb(disk_usage.used as f64, false, false);
+            let available = as_gb(disk_usage.available as f64, false, false);
+
+            let max = [&total, &used, &available]
+                .iter()
+                .map(|v| v.len())
+                .max()
+                .unwrap_or(0);
+
+            rows.push(Content::separator());
+            rows.push(Content::field(
+                "Storage Total:",
+                total.pad_to_width_with_alignment(max, Alignment::Right),
+            ));
+            rows.push(Content::field(
+                "Used:",
+                used.pad_to_width_with_alignment(max, Alignment::Right),
+            ));
+            rows.push(Content::field(
+                "Available:",
+                format!(
+                    "{} ({:1.0}%)",
+                    available.pad_to_width_with_alignment(max, Alignment::Right),
+                    disk_usage.capacity() * 100.0
+                ),
+            ));
+        }
+        rows
+    }
+}
+
+impl Default for System {
+    fn default() -> Self {
+        use sysinfo::*;
+        let mut system = System::new();
+        system.refresh_cpu_specifics(CpuRefreshKind::new().with_frequency());
+        system.refresh_memory();
+        let cpus = system.cpus();
+        let cpu_physical_core_count = system.physical_core_count();
+        let long_os_version = System::long_os_version();
+        let total_memory = system.total_memory();
+
+        let (cpu_frequency, cpu_brand) = cpus
+            .first()
+            .map(|cpu| (cpu.frequency(), cpu.brand().to_string()))
+            .unzip();
+
+        let disk_usage = disk_usage();
+
+        Self {
+            cpu_physical_cores: cpu_physical_core_count,
+            cpu_frequency,
+            cpu_brand,
+            total_memory,
+            long_os_version,
+            disk_usage,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct DiskUsage {
+    pub total: u64,
+    pub used: u64,
+    pub available: u64,
+}
+
+impl DiskUsage {
+    pub fn capacity(&self) -> f64 {
+        self.available as f64 / self.total as f64
+    }
+}
+pub fn disk_usage() -> Option<DiskUsage> {
+    let lines = cmd!("df", "-k", home_folder()).read().ok()?;
+    let lines = lines.lines();
+    if let Some(line) = lines.last() {
+        let mut parts = line.split_whitespace();
+        let total = parts.nth(1).and_then(|v| u64::from_str(v).ok())? * 1024;
+        let used = parts.next().and_then(|v| u64::from_str(v).ok())? * 1024;
+        let available = parts.next().and_then(|v| u64::from_str(v).ok())? * 1024;
+        Some(DiskUsage {
+            total,
+            used,
+            available,
+        })
+    } else {
+        None
+    }
+}

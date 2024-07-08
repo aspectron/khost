@@ -1,6 +1,0 @@
-#!/bin/bash
-
-sudo cp ./resources/systemd/kaspa-testnet-11.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable kaspa-testnet-11
-
