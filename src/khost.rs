@@ -19,7 +19,7 @@ pub fn update() -> Result<()> {
         if let Ok(latest_version) = version::blocking::latest_crate_version("khost") {
             if latest_version.is_greater_than(version()) {
                 log::warning(format!("New version of khost@{latest_version} detected"))?;
-                if cliclack::confirm("Would you like to update?").interact()? {
+                if confirm("Would you like to update?").interact()? {
                     log::info(format!("Updating khost to {latest_version}"))?;
                     cmd!("cargo", "install", format!("khost@{latest_version}")).run()?;
                     log::success(format!("khost updated to {latest_version}"))?;

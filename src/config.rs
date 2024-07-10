@@ -4,9 +4,11 @@ use crate::imports::*;
 pub struct Config {
     // Bootstrap was executed
     pub bootstrap: bool,
+    pub public: bool,
+    pub fqdn: Option<String>,
     pub ip: Option<String>,
     pub kaspad: Vec<kaspad::Config>,
-    pub resolver: Option<resolver::Config>,
+    pub resolver: resolver::Config,
     // pub ssl : bool,
 }
 
@@ -14,9 +16,11 @@ impl Default for Config {
     fn default() -> Self {
         Config {
             bootstrap: false,
+            public: true,
+            fqdn: None,
             ip: None,
             kaspad: vec![kaspad::Config::default()],
-            resolver: Some(resolver::Config::default()),
+            resolver: resolver::Config::default(),
             // ssl: false,
         }
     }
@@ -38,8 +42,8 @@ impl Config {
     }
 }
 
-pub fn fqdn() -> Result<String> {
-    match cliclack::input("Enter the fully qualified domain name (FQDN)")
+pub fn fqdn<S: Display>(prompt: S) -> Result<String> {
+    match cliclack::input(prompt)
         .validate(|input: &String| {
             if input.is_empty() {
                 Err("Please enter a valid domain name".to_string())
@@ -51,14 +55,38 @@ pub fn fqdn() -> Result<String> {
         })
         .interact::<String>()
     {
-        Ok(fqdn) => {
-            Ok(fqdn.to_string())
-            // Ok(())
-        }
-        Err(e) => {
-            Err(e.into())
-            // log::error(&e).ok();
-            // std::process::exit(1);
-        }
+        Ok(fqdn) => Ok(fqdn.to_string()),
+        Err(e) => Err(e.into()),
     }
+}
+
+pub fn public_network(ctx: &mut Context) -> Result<()> {
+    ctx.config.public =
+        confirm("Would you like this node to join the Kaspa public node network?").interact()?;
+    if ctx.config.public {
+        if let Some(ip) = ctx.config.ip.as_ref() {
+            cliclack::note(
+                "Public Node Network",
+                format!(
+                    r#"
+Thank you for contributing to the Kaspa ecosystem!
+
+Your public IPv4 address is: {}
+
+Please reach out to one of the public node maintainers
+on Kaspa Discord to have your node registered.
+"#,
+                    ::console::style(ip).cyan()
+                ),
+            )?;
+        } else {
+            log::error("Unable to detect your public IPv4 address.\nPlease resolve this problem before continuing.")?;
+            return Err(Error::custom("Unable to detect public ip :("));
+        }
+    } else {
+        let fqdn = fqdn("Enter the fully qualified domain name (FQDN):")?;
+        ctx.config.fqdn = Some(fqdn);
+    }
+    ctx.config.save()?;
+    Ok(())
 }

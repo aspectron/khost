@@ -1,21 +1,20 @@
 use crate::imports::*;
 
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
-#[caption = "First time install"]
-pub enum Bootstrap {
-    /// Perform default public node installation
-    #[describe("Default install")]
-    Default,
-    /// Continue to main menu
-    #[describe("Skip")]
-    Skip,
+#[caption = "Select services to update"]
+pub enum Update {
+    /// Go back to the previous menu
+    #[describe("Back")]
+    Back,
+    #[describe("Update all services")]
+    All,
 }
 
-impl Action<Context> for Bootstrap {
+impl Action<Context> for Update {
     type Error = Error;
     fn run(&self, ctx: &mut Context) -> Result<()> {
         match self {
-            Bootstrap::Default => {
+            Update::All => {
                 if confirm("This will install the Kaspa software and configure services. Continue?")
                     .interact()?
                 {
@@ -28,7 +27,7 @@ impl Action<Context> for Bootstrap {
 
                 Ok(())
             }
-            Bootstrap::Skip => Ok(()),
+            Update::Back => Ok(()),
         }
     }
 }

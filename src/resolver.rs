@@ -1,13 +1,26 @@
 use crate::imports::*;
 use nginx::prelude::*;
 
-const SERVICE_NAME: &str = "kaspa-resolver";
+pub const SERVICE_NAME: &str = "kaspa-resolver";
 
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
-    stats: bool,
+    pub enabled: bool,
+    pub sync: bool,
+    pub stats: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
-    http: Option<Interface>,
+    pub http: Option<Interface>,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            enabled: true,
+            sync: false,
+            stats: false,
+            http: None,
+        }
+    }
 }
 
 impl Config {
@@ -49,14 +62,16 @@ impl From<&Config> for Vec<String> {
 pub fn fetch() -> Result<()> {
     let path = folder();
 
-    log::info("Synchronizing resolver sources...")?;
-    if path.exists() {
-        git::restore(&path)?;
-        git::pull(&path)?;
-    } else {
-        git::clone("https://github.com/aspectron/kaspa-resolver", &path, None)?;
-    }
-    log::success("Resolver sources synchronized...")?;
+    track("Synchronizing resolver sources...", |step| {
+        if path.exists() {
+            git::restore(&path)?;
+            git::pull(&path)?;
+        } else {
+            git::clone("https://github.com/aspectron/kaspa-resolver", &path, None)?;
+        }
+
+        step.done("Resolver sources synchronized...")
+    })?;
 
     Ok(())
 }
@@ -70,6 +85,8 @@ pub fn folder() -> PathBuf {
 }
 
 pub fn install(ctx: &mut Context) -> Result<()> {
+    log::remark("Installing Kaspa wPRC resolver...")?;
+
     fetch()?;
     build()?;
 
@@ -102,6 +119,8 @@ pub fn update() -> Result<()> {
 }
 
 pub fn uninstall() -> Result<()> {
+    log::remark("Uninstalling resolver...")?;
+
     if nginx::exists(SERVICE_NAME) {
         nginx::remove(SERVICE_NAME)?;
         nginx::reload()?;
@@ -132,9 +151,9 @@ pub fn uninstall() -> Result<()> {
 pub fn build() -> Result<()> {
     rust::update()?;
 
-    log::info("Building resolver...")?;
-
-    cmd("cargo", &["build", "--release"]).dir(folder()).run()?;
+    step("Building resolver...", || {
+        cmd!("cargo", "build", "--release").dir(folder()).run()
+    })?;
 
     if let Some(version) = version() {
         log::success("Build successful")?;
@@ -183,10 +202,6 @@ pub fn restart() -> Result<()> {
     systemd::restart(SERVICE_NAME)
 }
 
-// pub fn status() -> Result<String> {
-//     systemd::status("kaspa-resolver")
-// }
-
 pub fn logs() -> Result<()> {
     systemd::logs(SERVICE_NAME)
 }
@@ -195,59 +210,6 @@ pub fn is_active() -> Result<bool> {
     systemd::is_active(SERVICE_NAME)
 }
 
-// pub fn enable() -> Result<()> {
-//     systemd::enable("kaspa-resolver")
-// }
-
 pub fn is_enabled() -> Result<bool> {
     systemd::is_enabled(SERVICE_NAME)
 }
-
-// pub fn exists() -> bool {
-//     systemd::exists("kaspa-resolver")
-// }
-
-pub fn update_config() -> Result<()> {
-    let key = load_key()?;
-    let data = reqwest::blocking::get(
-        "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/resolver.bin",
-    )?
-    .bytes()?;
-    // let data = http::get_bytes(
-    //     "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/resolver.bin",
-    // )
-    // .await?;
-    let _ = chacha20poly1305::decrypt_slice(&data, &key.into())?;
-    fs::write(config_folder().join("resolver.bin"), data)?;
-    Ok(())
-}
-
-pub fn config_folder() -> PathBuf {
-    home_folder().join(".kaspa-resolver")
-}
-
-pub fn create_key(passphrase: Secret) -> Result<()> {
-    let config_folder = config_folder();
-    fs::create_dir_all(&config_folder)?;
-    let hash = argon2_sha256(passphrase.as_bytes(), 32)?;
-    fs::write(config_folder.join("key"), hash)?;
-    Ok(())
-}
-
-fn load_key() -> Result<Vec<u8>> {
-    let config_folder = config_folder();
-    Ok(fs::read(config_folder.join("key"))?)
-}
-
-// pub fn create_nginx_config(ctx: &Context) -> Result<()> {
-//     let tpl = ctx.tpl.local([
-//         ("ROOT", folder(ctx).display().to_string().as_str()),
-//         ("PORT", "8080"),
-//     ]);
-
-//     let config = tpl.render("nginx/kaspa-resolver.conf")?;
-//     let path = PathBuf::from("/etc/nginx/sites-available/kaspa-resolver.conf");
-
-//     fs::write(&path, config)?;
-//     Ok(())
-// }

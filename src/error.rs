@@ -33,11 +33,6 @@ pub enum Error {
 
     #[error("Not found")]
     NotFound,
-
-    // #[error(transparent)]
-    // ConfigBuilder(#[from] crate::systemd::ConfigBuilderError),
-    #[error("Root privilege required (run `sudo khost`)")]
-    Sudo,
 }
 
 impl From<String> for Error {

@@ -1,7 +1,9 @@
 pub mod actions;
+pub mod args;
 pub mod base;
 pub mod bootstrap;
 pub mod config;
+pub mod console;
 pub mod content;
 pub mod context;
 pub mod error;
@@ -20,12 +22,26 @@ pub mod service;
 pub mod status;
 pub mod system;
 pub mod systemd;
+#[macro_use]
+pub mod cmd;
+pub use cmd::*;
 
 use crate::imports::*;
 
 // #[tokio::main]
 fn main() {
     println!();
+
+    if !is_root() {
+        cliclack::note(
+            format!("kHOST v{}", khost::VERSION),
+            "kHOST requires root privileges\nPlease run `sudo khost`",
+        )
+        .ok();
+        std::process::exit(1);
+    }
+
+    let args = args::parse();
 
     if runtime::is_windows() {
         let _ = log::error("kHOST supports Linux OS only");
@@ -39,9 +55,10 @@ fn main() {
 
     ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
 
-    let mut ctx = Context::try_new().unwrap();
+    let mut ctx = Context::try_new(args).unwrap();
 
     let first_run = !ctx.config.bootstrap;
+    // let first_run = true;
 
     // bootstrap::check(&mut ctx);
 
@@ -55,7 +72,7 @@ fn main() {
     }
 
     if first_run {
-        if let Err(err) = Bootstrap::select("First time install")
+        if let Err(err) = actions::Bootstrap::select()
             .map_err(Into::into)
             .and_then(|choice| choice.run(&mut ctx))
         {
@@ -67,12 +84,6 @@ fn main() {
     loop {
         if let Err(e) = run(&mut ctx) {
             match e {
-                Error::Sudo => {
-                    log::error(
-                        "This command requires root privileges\nPlease exit and run `sudo khost`",
-                    )
-                    .ok();
-                }
                 Error::Io(e) if e.kind() == std::io::ErrorKind::Interrupted => {
                     println!();
                     std::process::exit(0);
@@ -87,6 +98,6 @@ fn main() {
 }
 
 fn run(ctx: &mut Context) -> Result<()> {
-    Main::select("Select an action")?.run(ctx)?;
+    actions::Main::select()?.run(ctx)?;
     Ok(())
 }

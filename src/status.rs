@@ -3,7 +3,9 @@ use crate::system::System;
 
 pub struct Status {
     pub ip: Option<String>,
-    pub system: Rc<System>,
+    pub system: Arc<System>,
+    pub services: Vec<(String, String)>,
+    pub errors: Vec<(String, String)>,
 }
 
 impl Display for Status {
@@ -14,6 +16,21 @@ impl Display for Status {
             "Public IP:",
             self.ip.as_deref().unwrap_or("N/A"),
         ));
+        rows.push(Content::separator());
+        for (service, status) in &self.services {
+            rows.push(Content::field(service, status));
+        }
+
+        if !self.errors.is_empty() {
+            rows.push(Content::separator());
+            for (service, status) in &self.errors {
+                rows.push(Content::field(
+                    ::console::style(service).red(),
+                    ::console::style(status).red(),
+                ));
+            }
+        }
+
         writeln!(f, "{}", content(rows))?;
         Ok(())
     }
@@ -22,7 +39,46 @@ impl Display for Status {
 pub fn detect(ctx: &Context) -> Status {
     let ip = ip::blocking::public().ok();
     let system = ctx.system.clone();
-    Status { ip, system }
+
+    let mut services = vec![];
+    let nginx = systemd::is_enabled_resp("nginx").unwrap_or("error".to_string());
+    services.push(("nginx".to_string(), nginx));
+    let resolver = systemd::is_enabled_resp(resolver::SERVICE_NAME).unwrap_or("error".to_string());
+    services.push(("resolver".to_string(), resolver));
+
+    for config in kaspad::active_configs(ctx) {
+        let service_name = config.service_name();
+        let systemd_unit_enabled =
+            systemd::is_enabled_resp(&service_name).unwrap_or("error".to_string());
+        let systemd_unit_active =
+            systemd::is_active_resp(&service_name).unwrap_or("error".to_string());
+        services.push((
+            service_name,
+            format!("{systemd_unit_enabled}+{systemd_unit_active}"),
+        ));
+    }
+
+    let mut errors = vec![];
+    for config in kaspad::active_configs(ctx) {
+        let service_name = config.service_name();
+        let systemd_unit_enabled =
+            systemd::is_enabled_resp(&service_name).unwrap_or("error".to_string());
+        let systemd_unit_active =
+            systemd::is_active_resp(&service_name).unwrap_or("error".to_string());
+        if systemd_unit_active == "active" {
+            errors.push((
+                service_name,
+                format!("{systemd_unit_enabled}+{systemd_unit_active}"),
+            ));
+        }
+    }
+
+    Status {
+        ip,
+        system,
+        services,
+        errors,
+    }
 }
 
 pub enum Conflict {

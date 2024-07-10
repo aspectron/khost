@@ -101,7 +101,6 @@ impl ProxyConfig {
 
 pub struct Config {
     pub service_name: String,
-    // pub fqdn: Vec<String>,
     pub server_kind: ServerKind,
     pub proxy_config: Vec<ProxyConfig>,
 }
@@ -180,23 +179,16 @@ pub fn version() -> Option<String> {
         .map(|s| s.trim().to_string())
 }
 
-pub fn install(ctx: &Context) -> Result<()> {
-    if !ctx.is_root {
-        return Err(Error::custom("Nginx installation requires root privileges"));
-    } else {
-        log::info("Installing Nginx...")?;
-        cmd!("sudo", "apt", "install", "-y", "nginx").run()?;
-        log::success("Nginx installed successfully.")?;
-    }
+pub fn install(_ctx: &Context) -> Result<()> {
+    step("Installing Nginx...", || {
+        cmd!("sudo", "apt", "install", "-y", "nginx").run()
+    })?;
 
     Ok(())
 }
 
 pub fn reload() -> Result<()> {
-    log::info("Reloading Nginx...")?;
-    cmd!("nginx", "-s", "reload").run()?;
-    log::success("Nginx reload successful.")?;
-    Ok(())
+    step("Reloading Nginx...", || cmd!("nginx", "-s", "reload").run())
 }
 
 pub fn reconfigure() -> Result<()> {
@@ -214,23 +206,21 @@ where
 
 pub fn create(config: Config) -> Result<()> {
     let config_filename = config_filename(&config.service_name);
-    log::info(format!(
+    log::step(format!(
         "Creating Nginx config file: '{}'",
         config_filename.display()
     ))?;
     fs::write(config_filename, config.to_string())?;
-    log::success("Nginx config file created.")?;
     Ok(())
 }
 
 pub fn remove<S: Display>(service_name: S) -> Result<()> {
     let config_filename = config_filename(service_name);
-    log::info(format!(
+    log::step(format!(
         "Removing Nginx config file: '{}'",
         config_filename.display()
     ))?;
     fs::remove_file(config_filename)?;
-    log::success("Nginx config file removed.")?;
     Ok(())
 }
 

@@ -51,42 +51,37 @@ impl Config {
 }
 
 pub fn enable<S: Display>(service_name: S) -> Result<()> {
-    log::info(format!("Enabling {service_name}..."))?;
-    cmd!("systemctl", "enable", service_name.to_string()).run()?;
-    log::success(format!("{service_name} enabled"))?;
-    Ok(())
+    step(format!("Enabling {service_name}..."), || {
+        cmd!("systemctl", "enable", service_name.to_string()).run()
+    })
 }
 
 pub fn disable<S: Display>(service_name: S) -> Result<()> {
-    log::info(format!("Disabling {service_name}..."))?;
-    cmd!("systemctl", "disable", service_name.to_string()).run()?;
-    log::success(format!("{service_name} disabled"))?;
-    Ok(())
+    step(format!("Disabling {service_name}..."), || {
+        cmd!("systemctl", "disable", service_name.to_string()).run()
+    })
 }
 
 pub fn start<S: Display>(service_name: S) -> Result<()> {
-    log::info(format!("Starting {service_name}..."))?;
-    cmd!("systemctl", "start", service_name.to_string()).run()?;
-    log::success(format!("{service_name} started"))?;
-    Ok(())
+    step(format!("Starting {service_name}..."), || {
+        cmd!("systemctl", "start", service_name.to_string()).run()
+    })
 }
 
 pub fn stop<S: Display>(service_name: S) -> Result<()> {
-    log::info(format!("Stopping {service_name}..."))?;
-    cmd!("systemctl", "stop", service_name.to_string()).run()?;
-    log::success(format!("{service_name} stopped"))?;
-    Ok(())
+    step(format!("Stopping {service_name}..."), || {
+        cmd!("systemctl", "stop", service_name.to_string()).run()
+    })
 }
 
 pub fn restart<S: Display>(service_name: S) -> Result<()> {
-    log::info(format!("Restarting {service_name}..."))?;
-    cmd!("systemctl", "restart", service_name.to_string()).run()?;
-    log::success(format!("{service_name} restarted"))?;
-    Ok(())
+    step(format!("Restarting {service_name}..."), || {
+        cmd!("systemctl", "restart", service_name.to_string()).run()
+    })
 }
 
 pub fn status<S: Display>(service_name: S) -> Result<String> {
-    Ok(cmd!("systemctl", "status", service_name.to_string()).read()?)
+    cmd!("systemctl", "status", service_name.to_string()).read()
 }
 
 pub fn is_active<S: Display>(service_name: S) -> Result<bool> {
@@ -104,18 +99,34 @@ pub fn is_failed<S: Display>(service_name: S) -> Result<bool> {
     Ok(output.trim() == "failed")
 }
 
+pub fn is_active_resp<S: Display>(service_name: S) -> Result<String> {
+    cmd!("systemctl", "is-active", service_name.to_string())
+        .read()
+        .map(|resp| resp.trim().to_string())
+}
+
+pub fn is_enabled_resp<S: Display>(service_name: S) -> Result<String> {
+    cmd!("systemctl", "is-enabled", service_name.to_string())
+        .read()
+        .map(|resp| resp.trim().to_string())
+}
+
+pub fn is_failed_resp<S: Display>(service_name: S) -> Result<String> {
+    cmd!("systemctl", "is-failed", service_name.to_string())
+        .read()
+        .map(|resp| resp.trim().to_string())
+}
+
 pub fn reload<S: Display>(service_name: S) -> Result<()> {
-    log::step(format!("Reloading {service_name}..."))?;
-    cmd!("systemctl", "reload", service_name.to_string()).run()?;
-    log::success(format!("{service_name} reloaded"))?;
-    Ok(())
+    step(format!("Reloading {service_name}..."), || {
+        cmd!("systemctl", "reload", service_name.to_string()).run()
+    })
 }
 
 pub fn daemon_reload() -> Result<()> {
-    log::info("Reloading systemd daemons...")?;
-    cmd!("systemctl", "daemon-reload").run()?;
-    log::success("Systemd daemon reloaded")?;
-    Ok(())
+    step("Reloading systemd daemons...", || {
+        cmd!("systemctl", "daemon-reload").run()
+    })
 }
 
 pub fn logs<S: Display>(service_name: S) -> Result<()> {
@@ -147,7 +158,7 @@ pub fn create(config: Config) -> Result<()> {
         config.service_name
     ))?;
     fs::write(service_path, config.to_string())?;
-    log::success("Systemd unit file created successfully")?;
+    // log::success("Systemd unit file created successfully")?;
     Ok(())
 }
 
@@ -159,7 +170,7 @@ pub fn remove<S: Display>(service_name: S) -> Result<()> {
         disable(&service_name)?;
         fs::remove_file(service_path)?;
         daemon_reload()?;
-        log::success(format!("Service '{service_name}' removed"))?;
+        // log::success(format!("Service '{service_name}' removed"))?;
     } else {
         log::error(format!(
             "Systemd unit file '{}' not found",

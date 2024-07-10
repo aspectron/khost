@@ -8,6 +8,10 @@ mod advanced;
 pub use advanced::*;
 mod configure;
 pub use configure::*;
+mod status;
+pub use status::*;
+mod update;
+pub use update::*;
 
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum Services {

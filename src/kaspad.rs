@@ -126,7 +126,7 @@ pub fn fetch() -> Result<()> {
         git::clone(
             "https://github.com/aspectron/rusty-kaspa",
             &path,
-            Some("wrpc-serializer"),
+            Some("omega"),
         )?;
     }
 
@@ -167,6 +167,7 @@ pub fn update(ctx: &Context) -> Result<()> {
 pub fn uninstall(ctx: &Context) -> Result<()> {
     for config in active_configs(ctx) {
         let service_name = service_name(config);
+        log::remark(format!("Uninstalling Kaspad p2p node '{service_name}'..."))?;
 
         if systemd::exists(&service_name) {
             systemd::stop(&service_name)?;
@@ -186,27 +187,59 @@ pub fn uninstall(ctx: &Context) -> Result<()> {
 
     let path = folder();
     if path.exists() {
-        log::info("Removing Rusty Kaspa p2p node...")?;
-        fs::remove_dir_all(&path)?;
-        log::success("Rusty Kaspa p2p node removed")?;
+        step("Removing Rusty Kaspa p2p node...", || {
+            fs::remove_dir_all(&path)?;
+            Ok(())
+        })?;
     } else {
         log::error("Rusty Kaspa folder not found")?;
+    }
+
+    if confirm("Do you want to remove Kaspa p2p node data folder?").interact()? {
+        for config in ctx.config.kaspad.iter() {
+            let data_folder = if let Some(data_folder) = &config.data_folder {
+                data_folder.clone()
+            } else {
+                home_folder().join(".kaspad")
+            };
+
+            let network_folder = data_folder.join(config.network.to_string());
+            if network_folder.exists() {
+                step(
+                    format!(
+                        "Removing Kaspa p2p node data folder: '{}'",
+                        network_folder.display()
+                    ),
+                    || {
+                        fs::remove_dir_all(&network_folder)?;
+                        Ok(())
+                    },
+                )?;
+            } else {
+                log::error(format!(
+                    "Kaspa p2p node data folder not found: '{}'",
+                    network_folder.display()
+                ))?;
+            }
+        }
     }
 
     Ok(())
 }
 
 pub fn build() -> Result<()> {
-    cmd("cargo", &["build", "--release", "--bin", "kaspad"])
-        .dir(folder())
-        .run()?;
+    step("Building Kaspad p2p node...", || {
+        cmd!("cargo", "build", "--release", "--bin", "kaspad")
+            .dir(folder())
+            .run()
+    })?;
 
     if let Some(version) = version() {
         log::success("Build successful")?;
         log::info(format!("Kaspad version: {}", version))?;
         Ok(())
     } else {
-        log::warning("Unable to determine kaspad version")?;
+        log::error("Unable to determine kaspad version")?;
         Err(Error::custom("Failed to execute kaspad"))
     }
 }
@@ -220,7 +253,7 @@ pub fn folder() -> PathBuf {
 }
 
 pub fn version() -> Option<String> {
-    cmd(binary(), &["--version"])
+    duct::cmd!(binary(), "--version")
         .read()
         .ok()
         .and_then(|s| s.trim().split(' ').last().map(String::from))
@@ -243,28 +276,23 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
 }
 
 pub fn start(config: &Config) -> Result<()> {
-    systemd::start(service_name(config))?;
-    Ok(())
+    systemd::start(service_name(config))
 }
 
 pub fn stop(config: &Config) -> Result<()> {
-    systemd::stop(service_name(config))?;
-    Ok(())
+    systemd::stop(service_name(config))
 }
 
 pub fn restart(config: &Config) -> Result<()> {
-    systemd::restart(service_name(config))?;
-    Ok(())
+    systemd::restart(service_name(config))
 }
 
-pub fn status(config: &Config) -> Result<()> {
-    systemd::status(service_name(config))?;
-    Ok(())
+pub fn status(config: &Config) -> Result<String> {
+    systemd::status(service_name(config))
 }
 
 pub fn logs(config: &Config) -> Result<()> {
-    systemd::logs(service_name(config))?;
-    Ok(())
+    systemd::logs(service_name(config))
 }
 
 pub fn is_active(config: &Config) -> Result<bool> {
@@ -282,7 +310,7 @@ pub fn configure_networks(ctx: &mut Context, networks: Vec<Network>) -> Result<(
             "Detected RAM is {}, minimum required for multiple networks is 32 Gb.",
             as_gb(ctx.system.total_memory as f64, false, false)
         ))?;
-        if !cliclack::confirm("Continue with multiple network setup?").interact()? {
+        if !confirm("Continue with multiple network setup?").interact()? {
             log::warning("Aborting...")?;
             return Ok(());
         }
@@ -301,6 +329,8 @@ pub fn configure_networks(ctx: &mut Context, networks: Vec<Network>) -> Result<(
 pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
     let mut reconfigure_systemd = false;
     let mut reconfigure_nginx = false;
+
+    log::remark("Updating Kaspa p2p node configuration...")?;
 
     for config in inactive_configs(ctx) {
         let service_name = service_name(config);
@@ -321,6 +351,7 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
 
     for config in active_configs(ctx) {
         let service_name = service_name(config);
+
         if force || !systemd::exists(&service_name) {
             create_systemd_unit(ctx, config)?;
             reconfigure_systemd = true;

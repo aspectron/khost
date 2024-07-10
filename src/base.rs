@@ -1,49 +1,65 @@
 use crate::imports::*;
 
 pub fn install(ctx: &Context) -> Result<()> {
-    ctx.root()?;
+    log::remark(format!(
+        "Upgrading {}...",
+        ctx.system
+            .long_os_version
+            .as_ref()
+            .unwrap_or(&"OS".to_string())
+    ))?;
 
-    log::step("Updating aptitude repositories...")?;
-    cmd!("apt", "update", "-y").run()?;
-    log::step("Upgrading OS...")?;
-    cmd!("apt", "upgrade", "-y").run()?;
-    log::step("Installing prerequisites...")?;
-    cmd(
-        "apt",
-        [
-            "install",
-            "-y",
-            "curl",
-            "git",
-            "build-essential",
-            "libssl-dev",
-            "pkg-config",
-            "protobuf-compiler",
-            "libprotobuf-dev",
-            "clang-format",
-            "clang-tidy",
-            "clang-tools",
-            "clang",
-            "clangd",
-            "libc++-dev",
-            "libc++1",
-            "libc++abi-dev",
-            "libc++abi1",
-            "libclang-dev",
-            "libclang1",
-            "liblldb-dev",
-            "libllvm-ocaml-dev",
-            "libomp-dev",
-            "libomp5",
-            "lld",
-            "lldb",
-            "llvm-dev",
-            "llvm-runtime",
-            "llvm",
-            "python3-clang",
-        ],
-    )
-    .run()?;
+    step("Updating aptitude repositories...", || {
+        cmd!("apt", "update", "-y").run()
+    })?;
+
+    step("Upgrading OS packages...", || {
+        cmd!("apt", "upgrade", "-y").run()
+    })?;
+
+    let packages = [
+        "curl",
+        "git",
+        "build-essential",
+        "libssl-dev",
+        "pkg-config",
+        "protobuf-compiler",
+        "libprotobuf-dev",
+        "clang-format",
+        "clang-tidy",
+        "clang-tools",
+        "clang",
+        "clangd",
+        "libc++-dev",
+        "libc++1",
+        "libc++abi-dev",
+        "libc++abi1",
+        "libclang-dev",
+        "libclang1",
+        "liblldb-dev",
+        "libllvm-ocaml-dev",
+        "libomp-dev",
+        "libomp5",
+        "lld",
+        "lldb",
+        "llvm-dev",
+        "llvm-runtime",
+        "llvm",
+        "python3-clang",
+    ];
+
+    let len = packages.iter().map(|s| s.len()).max().unwrap();
+
+    progress(packages.len(), "Installing prerequisites...", |progress| {
+        for package in packages.iter() {
+            progress.inc(1);
+            progress.set_message(package.pad_to_width(len));
+
+            cmd!("apt", "install", "-y", package).run()?;
+        }
+
+        Ok("Prerequisites installed successfully.")
+    })?;
 
     Ok(())
 }
