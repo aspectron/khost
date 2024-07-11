@@ -104,10 +104,36 @@ impl Conflict {
     }
 }
 
-#[allow(clippy::vec_init_then_push)]
-pub fn conflicts(_ctx: &Context, _status: &Status) -> Option<Vec<String>> {
-    let mut list = vec![];
+pub fn conflicts(_ctx: &Context, _status: &Status) {
+    use sysinfo::*;
 
-    list.push("Kaspad is not running".to_string());
-    (!list.is_empty()).then_some(list)
+    let mut system = System::new();
+    system.refresh_processes();
+    let kaspad_paths = system
+        .processes()
+        .values()
+        .filter_map(|proc| {
+            proc.exe().and_then(|path| {
+                let path_str = path.display().to_string();
+                (["kaspad", "kaspa-ng", "kaspa-resolver", "sparkled"]
+                    .iter()
+                    .any(|k| path_str.contains(k)))
+                .then_some((proc, path))
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let root_folder = root_folder();
+    for (_proc, path) in kaspad_paths {
+        if !path.starts_with(&root_folder) {
+            log::error(format!(
+                "{} `{}`\n{}",
+                style("Detected unknown process at:").red(),
+                path.display(),
+                style("Please make sure no other process instances are running on this system.")
+                    .yellow()
+            ))
+            .ok();
+        }
+    }
 }

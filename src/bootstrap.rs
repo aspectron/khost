@@ -22,8 +22,5 @@ pub fn run(ctx: &mut Context) -> Result<()> {
         base::install(ctx)?;
     }
 
-    ctx.config.bootstrap = true;
-    ctx.config.save()?;
-
     Ok(())
 }

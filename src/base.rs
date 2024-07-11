@@ -1,5 +1,9 @@
 use crate::imports::*;
 
+pub fn update(ctx: &Context) -> Result<()> {
+    install(ctx)
+}
+
 pub fn install(ctx: &Context) -> Result<()> {
     log::remark(format!(
         "Upgrading {}...",

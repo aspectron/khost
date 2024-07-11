@@ -81,6 +81,7 @@ impl Default for System {
         let mut system = System::new();
         system.refresh_cpu_specifics(CpuRefreshKind::new().with_frequency());
         system.refresh_memory();
+        // system.refresh_processes();
         let cpus = system.cpus();
         let cpu_physical_core_count = system.physical_core_count();
         let long_os_version = System::long_os_version();
@@ -92,6 +93,12 @@ impl Default for System {
             .unzip();
 
         let disk_usage = disk_usage();
+
+        // ---
+
+        // for (pid, process) in system.processes() {
+        //     println!("{} {}", pid, process.exe().map(|p| p.display().to_string()).unwrap_or_default());
+        // }
 
         Self {
             cpu_physical_cores: cpu_physical_core_count,

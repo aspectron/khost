@@ -19,7 +19,8 @@ impl Default for Config {
             public: true,
             fqdn: None,
             ip: None,
-            kaspad: vec![kaspad::Config::default()],
+            // kaspad: vec![kaspad::Config::default()],
+            kaspad: Network::into_iter().map(Into::into).collect(),
             resolver: resolver::Config::default(),
             // ssl: false,
         }
@@ -28,7 +29,7 @@ impl Default for Config {
 
 impl Config {
     pub fn load() -> Result<Self> {
-        let config_path = data_folder().join("config.toml");
+        let config_path = data_folder().join("config.json");
         if !config_path.exists() {
             return Err(Error::custom("Config file not found"));
         }
@@ -36,7 +37,7 @@ impl Config {
     }
 
     pub fn save(&self) -> Result<()> {
-        let config_path = data_folder().join("config.toml");
+        let config_path = data_folder().join("config.json");
         fs::write(config_path, serde_json::to_string_pretty(&self)?)?;
         Ok(())
     }

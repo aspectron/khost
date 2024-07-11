@@ -11,15 +11,16 @@ pub enum Bootstrap {
     Skip,
 }
 
-impl Action<Context> for Bootstrap {
-    type Error = Error;
-    fn run(&self, ctx: &mut Context) -> Result<()> {
+impl Action for Bootstrap {
+    fn main(&self, ctx: &mut Context) -> Result<()> {
         match self {
             Bootstrap::Default => {
                 if confirm("This will install the Kaspa software and configure services. Continue?")
                     .interact()?
                 {
                     bootstrap::run(ctx)?;
+                    ctx.config.bootstrap = true;
+                    ctx.config.save()?;
 
                     nginx::install(ctx)?;
                     resolver::install(ctx)?;
@@ -28,7 +29,14 @@ impl Action<Context> for Bootstrap {
 
                 Ok(())
             }
-            Bootstrap::Skip => Ok(()),
+            Bootstrap::Skip => {
+                ctx.config.bootstrap = true;
+                ctx.config.save()?;
+
+                log::info("You can perform a full install later from the Advanced menu.")?;
+
+                Ok(())
+            }
         }
     }
 }

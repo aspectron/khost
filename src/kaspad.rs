@@ -1,7 +1,7 @@
 use crate::imports::*;
 use nginx::prelude::*;
 
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     enabled: bool,
     network: Network,
@@ -23,9 +23,18 @@ impl Config {
     pub fn is_enabled(&self) -> bool {
         self.enabled
     }
-    //     pub fn service_name(&self) -> String {
-    //         format!("kaspa-{}", self.network)
-    //     }
+
+    pub fn data_folder(&self) -> PathBuf {
+        self.data_folder.clone().unwrap_or_else(|| {
+            home_folder()
+                .join(".rusty-kaspa")
+                .join(service_name(&self.network))
+        })
+    }
+
+    pub fn network(&self) -> Network {
+        self.network
+    }
 }
 
 impl From<Network> for Config {
@@ -378,4 +387,40 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+pub fn stop_all(ctx: &Context) -> Result<()> {
+    for config in active_configs(ctx) {
+        stop(config)?;
+    }
+    Ok(())
+}
+
+pub fn start_all(ctx: &Context) -> Result<()> {
+    for config in active_configs(ctx) {
+        start(config)?;
+    }
+    Ok(())
+}
+
+pub fn purge_data_folder_all(ctx: &Context) -> Result<()> {
+    for config in active_configs(ctx) {
+        purge_data_folder(config)?;
+    }
+    Ok(())
+}
+
+pub fn purge_data_folder(config: &Config) -> Result<()> {
+    let data_folder = config.data_folder();
+
+    step(
+        format!(
+            "Removing Kaspa p2p node data folder: '{}'",
+            data_folder.display()
+        ),
+        || {
+            fs::remove_dir_all(&data_folder)?;
+            Ok(())
+        },
+    )
 }

@@ -1,4 +1,5 @@
 use thiserror::Error;
+// use workflow_utils::action::UserAbort;
 
 #[derive(Error, Debug)]
 pub enum Error {
@@ -34,6 +35,12 @@ pub enum Error {
     #[error("Not found")]
     NotFound,
 }
+
+// impl UserAbort for Error {
+//     fn is_user_abort(&self) -> bool {
+//         matches!(self, Error::Io(e) if e.kind() == std::io::ErrorKind::Interrupted)
+//     }
+// }
 
 impl From<String> for Error {
     fn from(s: String) -> Self {

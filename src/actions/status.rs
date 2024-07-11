@@ -6,8 +6,6 @@ pub enum Status {
     /// Go back to the previous menu
     #[describe("Back")]
     Back,
-    // #[describe("Domain names")]
-    // Domains,
     /// The heart of the Kaspa network
     #[describe("Kaspa p2p node")]
     Kaspad,
@@ -18,9 +16,8 @@ pub enum Status {
     Nginx,
 }
 
-impl Action<Context> for Status {
-    type Error = Error;
-    fn run(&self, _ctx: &mut Context) -> Result<()> {
+impl Action for Status {
+    fn main(&self, _ctx: &mut Context) -> Result<()> {
         match self {
             Status::Back => {}
             Status::Kaspad => {}

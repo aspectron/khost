@@ -4,44 +4,44 @@ use actions::*;
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Main menu"]
 pub enum Main {
-    #[describe("Configure services")]
+    /// Configure services
+    #[describe("Configure")]
     Configure,
     /// Display service status
-    #[describe("Status and logs")]
+    #[describe("Status")]
     Status,
     /// Enable or disable services
-    #[describe("Service control")]
-    Manage,
-    /// Update services
-    #[describe("Software updates")]
+    #[describe("Control")]
+    Control,
+    /// Update services to the latest version
+    #[describe("Updates")]
     Update,
-    /// Uninstall services
+    /// Uninstall services, delete data, etc.
     #[describe("Advanced")]
     Advanced,
     /// Exit the program
     Exit,
 }
 
-impl Action<Context> for Main {
-    type Error = Error;
-    fn run(&self, ctx: &mut Context) -> Result<()> {
+impl Action for Main {
+    fn main(&self, ctx: &mut Context) -> Result<()> {
         match self {
             Main::Configure => {
-                Configure::select()?.run(ctx)?;
+                Configure::select(ctx)?;
             }
 
             Main::Status => {
-                Status::select()?.run(ctx)?;
+                Status::select(ctx)?;
             }
 
-            Main::Manage => {
+            Main::Control => {
                 // TODO - multi-select service to enable/disable
             }
             Main::Update => {
-                Update::select()?.run(ctx)?;
+                Update::select(ctx)?;
             }
             Main::Advanced => {
-                Advanced::select()?.run(ctx)?;
+                Advanced::select(ctx)?;
             }
             Main::Exit => {
                 cliclack::outro("bye!")?;

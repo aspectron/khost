@@ -6,6 +6,8 @@ pub enum Configure {
     /// Go back to the previous menu
     #[describe("Back")]
     Back,
+    #[describe("Fail")]
+    Fail,
     // #[describe("Domain names")]
     // Domains,
     /// The heart of the Kaspa network
@@ -16,10 +18,12 @@ pub enum Configure {
     Resolver,
 }
 
-impl Action<Context> for Configure {
-    type Error = Error;
-    fn run(&self, _ctx: &mut Context) -> Result<()> {
+impl Action for Configure {
+    fn main(&self, _ctx: &mut Context) -> Result<()> {
         match self {
+            Configure::Fail => {
+                cmd!("bash", "fail").run()?;
+            }
             Configure::Back => {}
             Configure::Kaspad => {}
             Configure::Resolver => {}

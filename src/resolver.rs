@@ -111,7 +111,7 @@ pub fn nginx_config(_ctx: &Context) -> NginxConfig {
     NginxConfig::new(SERVICE_NAME, server_kind, vec![proxy_config])
 }
 
-pub fn update() -> Result<()> {
+pub fn update(_ctx: &Context) -> Result<()> {
     fetch()?;
     build()?;
     restart()?;

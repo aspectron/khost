@@ -53,8 +53,6 @@ fn main() {
     // Check for updates
     khost::update().ok();
 
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     let mut ctx = Context::try_new(args).unwrap();
 
     let first_run = !ctx.config.bootstrap;
@@ -65,39 +63,23 @@ fn main() {
     let status = status::detect(&ctx);
     let _ = cliclack::note(format!("kHOST v{}", khost::VERSION), &status);
 
-    if let Some(conflicts) = status::conflicts(&ctx, &status) {
-        conflicts.iter().for_each(|c| {
-            let _ = log::error(c);
-        });
-    }
+    status::conflicts(&ctx, &status);
+    // if let Some(conflicts) = status::conflicts(&ctx, &status) {
+    //     conflicts.iter().for_each(|c| {
+    //         let _ = log::error(c);
+    //     });
+    // }
+
+    init_user_interaction();
 
     if first_run {
-        if let Err(err) = actions::Bootstrap::select()
-            .map_err(Into::into)
-            .and_then(|choice| choice.run(&mut ctx))
-        {
+        if let Err(err) = actions::Bootstrap::select(&mut ctx) {
             log::error(err).ok();
             log::info("You can attempt another full install from 'Advanced' menu").ok();
         }
     }
 
-    loop {
-        if let Err(e) = run(&mut ctx) {
-            match e {
-                Error::Io(e) if e.kind() == std::io::ErrorKind::Interrupted => {
-                    println!();
-                    std::process::exit(0);
-                }
-                e => {
-                    // println!("Error: {:?}", e);
-                    log::error(&e).ok();
-                }
-            }
-        }
-    }
-}
+    actions::Main::run(&mut ctx).ok();
 
-fn run(ctx: &mut Context) -> Result<()> {
-    actions::Main::select()?.run(ctx)?;
-    Ok(())
+    println!();
 }

@@ -6,25 +6,36 @@ pub enum Update {
     /// Go back to the previous menu
     #[describe("Back")]
     Back,
-    #[describe("Update all services")]
+    /// Update OS and all services
+    #[describe("Update all")]
     All,
+    #[describe("OS prerequisites")]
+    Os,
+    #[describe("Resolver")]
+    Resolver,
+    #[describe("Kaspa p2p node")]
+    Kaspad,
 }
 
-impl Action<Context> for Update {
-    type Error = Error;
-    fn run(&self, ctx: &mut Context) -> Result<()> {
+impl Action for Update {
+    fn main(&self, ctx: &mut Context) -> Result<()> {
         match self {
             Update::All => {
-                if confirm("This will install the Kaspa software and configure services. Continue?")
-                    .interact()?
-                {
-                    bootstrap::run(ctx)?;
-
-                    nginx::install(ctx)?;
-                    resolver::install(ctx)?;
-                    kaspad::install(ctx)?;
-                }
-
+                base::update(ctx)?;
+                resolver::update(ctx)?;
+                kaspad::update(ctx)?;
+                Ok(())
+            }
+            Update::Os => {
+                base::update(ctx)?;
+                Ok(())
+            }
+            Update::Resolver => {
+                resolver::update(ctx)?;
+                Ok(())
+            }
+            Update::Kaspad => {
+                kaspad::update(ctx)?;
                 Ok(())
             }
             Update::Back => Ok(()),
