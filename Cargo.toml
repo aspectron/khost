@@ -5,16 +5,15 @@ edition = "2021"
 
 [dependencies]
 
-workflow-core = { path = "../workflow-rs/core"}
-workflow-encryption = { path = "../workflow-rs/encryption"}
-# workflow-http = { path = "../workflow-rs/http"}
-workflow-serializer = { path = "../workflow-rs/serializer"}
-workflow-utils = { path = "../workflow-rs/utils"}
+# workflow-core = { path = "../workflow-rs/core"}
+# workflow-encryption = { path = "../workflow-rs/encryption"}
+# workflow-serializer = { path = "../workflow-rs/serializer"}
+# workflow-utils = { path = "../workflow-rs/utils"}
 
-# workflow-encryption = "0.14.0"
-# workflow-http = "0.14.0"
-# workflow-serializer = "0.14.0"
-# workflow-utils = "0.14.0"
+workflow-encryption = "0.14.0"
+workflow-http = "0.14.0"
+workflow-serializer = "0.14.0"
+workflow-utils = "0.14.0"
 
 # workflow-encryption = { git = "git@github.com:workflow-rs/workflow-rs.git" branch="master" }
 # workflow-http = { git = "git@github.com:workflow-rs/workflow-rs.git" branch="master" }
