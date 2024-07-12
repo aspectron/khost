@@ -238,7 +238,7 @@ pub fn uninstall(ctx: &Context) -> Result<()> {
 
 pub fn build() -> Result<()> {
     rust::update()?;
-    
+
     step("Building Kaspad p2p node...", || {
         cmd!("cargo", "build", "--release", "--bin", "kaspad")
             .dir(folder())
