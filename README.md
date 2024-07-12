@@ -8,6 +8,7 @@ As root:
 
 ```bash
 adduser -q kaspa
+sudo adduser kaspa sudo
 login kaspa
 ```
 

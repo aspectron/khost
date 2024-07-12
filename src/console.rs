@@ -66,11 +66,8 @@ pub trait Action: Describe + Clone + Copy + Eq {
                 },
                 Err(e) => {
                     if SIGTERM.load(Ordering::Relaxed) {
-                        println!("SIGTERM - ERROR");
                         return Err(e.into());
                     } else {
-                        println!("SIGTERM - OK");
-                        // return Err(e.into());
                         return Ok(());
                     }
                 }
