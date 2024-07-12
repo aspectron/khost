@@ -11,6 +11,8 @@ pub enum Update {
     All,
     #[describe("OS prerequisites")]
     Os,
+    #[describe("Rust Compiler")]
+    RustC,
     #[describe("Resolver")]
     Resolver,
     #[describe("Kaspa p2p node")]
@@ -22,12 +24,17 @@ impl Action for Update {
         match self {
             Update::All => {
                 base::update(ctx)?;
+                rust::update()?;
                 resolver::update(ctx)?;
                 kaspad::update(ctx)?;
                 Ok(())
             }
             Update::Os => {
                 base::update(ctx)?;
+                Ok(())
+            }
+            Update::RustC => {
+                rust::update()?;
                 Ok(())
             }
             Update::Resolver => {
