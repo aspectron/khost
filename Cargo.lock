@@ -1357,8 +1357,8 @@ dependencies = [
  "tokio",
  "toml",
  "whoami",
+ "workflow-core",
  "workflow-encryption",
- "workflow-http",
  "workflow-serializer",
  "workflow-utils",
 ]
