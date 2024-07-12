@@ -18,6 +18,9 @@ impl Action for Bootstrap {
                 if confirm("This will install the Kaspa software and configure services. Continue?")
                     .interact()?
                 {
+
+                    ctx.config.resolver.enabled = confirm("Would you like to install Kaspa resolver?").interact()?;
+
                     bootstrap::run(ctx)?;
                     ctx.config.bootstrap = true;
                     ctx.config.save()?;

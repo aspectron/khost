@@ -16,6 +16,7 @@ impl Display for Config {
         writeln!(f, "[Unit]")?;
         writeln!(f, "Description={}", self.description)?;
         writeln!(f)?;
+        writeln!(f, "[Service]")?;
         writeln!(f, "User={}", self.user)?;
         writeln!(f, "ExecStart={}", self.exec_start)?;
         writeln!(f, "RestartSec={}", self.restart_secs)?;

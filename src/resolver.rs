@@ -15,7 +15,7 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            enabled: true,
+            enabled: false,
             sync: false,
             stats: false,
             http: None,
@@ -85,6 +85,10 @@ pub fn folder() -> PathBuf {
 }
 
 pub fn install(ctx: &mut Context) -> Result<()> {
+    if !ctx.config.resolver.enabled {
+        return Ok(());
+    }
+
     log::remark("Installing Kaspa wPRC resolver...")?;
 
     fetch()?;
@@ -103,7 +107,8 @@ pub fn install(ctx: &mut Context) -> Result<()> {
     Ok(())
 }
 
-pub fn nginx_config(_ctx: &Context) -> NginxConfig {
+pub fn nginx_config(ctx: &Context) -> NginxConfig {
+
     let fqdns = fqdn::get(false);
     let server_kind = ServerKind::http().with_fqdn(fqdns);
     let proxy_kind = ProxyKind::http(8989);
@@ -111,7 +116,11 @@ pub fn nginx_config(_ctx: &Context) -> NginxConfig {
     NginxConfig::new(SERVICE_NAME, server_kind, vec![proxy_config])
 }
 
-pub fn update(_ctx: &Context) -> Result<()> {
+pub fn update(ctx: &Context) -> Result<()> {
+    if !ctx.config.resolver.enabled {
+        return Ok(());
+    }
+
     fetch()?;
     build()?;
     restart()?;
@@ -149,6 +158,7 @@ pub fn uninstall() -> Result<()> {
 }
 
 pub fn build() -> Result<()> {
+
     rust::update()?;
 
     step("Building resolver...", || {
