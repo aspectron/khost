@@ -36,16 +36,20 @@ fn main() {
     println!();
 
     loop {
-        if let Err(e) = cliclack::password("Enter password:").interact() {
-            log::error(e.to_string()).ok();
-            cliclack::outro("Exiting...").ok();
-            std::process::exit(1);
-        }
-
-        if sudo!("echo", "test").run().is_ok() {
-            break;
-        } else {
-            log::error("Invalid password").ok();
+        match cliclack::password("Enter user password:").interact() {
+            Ok(password) => {
+                sudo::init_password(password);
+                if sudo!("echo", "test").run().is_ok() {
+                    break;
+                } else {
+                    log::error("Invalid password").ok();
+                }
+            }
+            Err(e) => {
+                log::error(e.to_string()).ok();
+                cliclack::outro("Exiting...").ok();
+                std::process::exit(1);
+            }
         }
     }
 
