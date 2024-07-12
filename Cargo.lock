@@ -3181,8 +3181,6 @@ version = "0.14.0"
 dependencies = [
  "ahash",
  "cliclack",
- "console",
- "lazy_static",
  "reqwest",
  "separator",
  "serde",
