@@ -38,8 +38,8 @@ fn main() {
     loop {
         match cliclack::password("Enter user password:").interact() {
             Ok(password) => {
-                sudo::init_password(password);
-                if sudo!("echo", "test").run().is_ok() {
+                if duct::cmd!("sudo","-kS","echo","test").stdin_bytes(password.as_bytes()).run().is_ok() {
+                    sudo::init_password(password);
                     break;
                 } else {
                     log::error("Invalid password").ok();
