@@ -181,14 +181,16 @@ pub fn version() -> Option<String> {
 
 pub fn install(_ctx: &Context) -> Result<()> {
     step("Installing Nginx...", || {
-        cmd!("sudo", "apt", "install", "-y", "nginx").run()
+        sudo!("apt", "install", "-y", "nginx").run()
     })?;
 
     Ok(())
 }
 
 pub fn reload() -> Result<()> {
-    step("Reloading Nginx...", || cmd!("nginx", "-s", "reload").run())
+    step("Reloading Nginx...", || {
+        sudo!("nginx", "-s", "reload").run()
+    })
 }
 
 pub fn reconfigure() -> Result<()> {
@@ -210,7 +212,7 @@ pub fn create(config: Config) -> Result<()> {
         "Creating Nginx config file: '{}'",
         config_filename.display()
     ))?;
-    fs::write(config_filename, config.to_string())?;
+    sudo::fs::write(config_filename, config.to_string())?;
     Ok(())
 }
 
@@ -220,7 +222,7 @@ pub fn remove<S: Display>(service_name: S) -> Result<()> {
         "Removing Nginx config file: '{}'",
         config_filename.display()
     ))?;
-    fs::remove_file(config_filename)?;
+    sudo::fs::remove_file(config_filename)?;
     Ok(())
 }
 

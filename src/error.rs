@@ -34,6 +34,9 @@ pub enum Error {
 
     #[error("Not found")]
     NotFound,
+
+    #[error("Sudo password is not set")]
+    Sudo,
 }
 
 // impl UserAbort for Error {

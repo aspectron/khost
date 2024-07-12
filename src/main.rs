@@ -25,6 +25,9 @@ pub mod systemd;
 #[macro_use]
 pub mod cmd;
 pub use cmd::*;
+#[macro_use]
+pub mod sudo;
+// pub use sudo::sudo;
 
 use crate::imports::*;
 
@@ -32,14 +35,28 @@ use crate::imports::*;
 fn main() {
     println!();
 
-    if !is_root() {
-        cliclack::note(
-            format!("kHOST v{}", khost::VERSION),
-            "kHOST requires root privileges\nPlease run `sudo khost`",
-        )
-        .ok();
-        std::process::exit(1);
+    loop {
+        if let Err(e) = cliclack::password("Enter password:").interact() {
+            log::error(e.to_string()).ok();
+            cliclack::outro("Exiting...").ok();
+            std::process::exit(1);
+        }
+
+        if sudo!("echo", "test").run().is_ok() {
+            break;
+        } else {
+            log::error("Invalid password").ok();
+        }
     }
+
+    // if !is_root() {
+    //     cliclack::note(
+    //         format!("kHOST v{}", khost::VERSION),
+    //         "kHOST requires root privileges\nPlease run `sudo khost`",
+    //     )
+    //     .ok();
+    //     std::process::exit(1);
+    // }
 
     let args = args::parse();
 

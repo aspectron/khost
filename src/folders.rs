@@ -4,9 +4,11 @@ cfg_if! {
     if #[cfg(target_os = "linux")] {
         const DATA_FOLDER_NAME: &str = ".khost";
         const ROOT_FOLDER_NAME: &str = "kaspa";
+        const TEMP_FOLDER_NAME: &str = ".temp";
     } else {
         const DATA_FOLDER_NAME: &str = "00-khost-dev";
         const ROOT_FOLDER_NAME: &str = "00-kaspa-dev";
+        const TEMP_FOLDER_NAME: &str = "00-temp-dev";
     }
 }
 
@@ -41,6 +43,18 @@ pub fn root_folder() -> PathBuf {
             let root_folder = home_folder().join(ROOT_FOLDER_NAME);
             fs::create_dir_all(&root_folder).expect("Unable to create ~/.khost data folder");
             root_folder
+        })
+        .clone()
+}
+
+pub fn temp_folder() -> PathBuf {
+    static TEMP_FOLDER: OnceLock<PathBuf> = OnceLock::new();
+
+    TEMP_FOLDER
+        .get_or_init(|| {
+            let temp_folder = home_folder().join(TEMP_FOLDER_NAME);
+            fs::create_dir_all(&temp_folder).expect("Unable to create ~/.khost data folder");
+            temp_folder
         })
         .clone()
 }

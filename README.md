@@ -18,7 +18,7 @@ As kaspa:
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source "$HOME/.cargo/env"
 cargo install khost
-sudo khost
+khost
 ```
 
 If you already have an existing user and rust installed, you can simply run `cargo install khost` and `sudo khost`.

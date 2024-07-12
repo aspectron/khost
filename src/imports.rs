@@ -44,6 +44,7 @@ pub use crate::result::{Capture, Result};
 pub use crate::rust;
 pub use crate::service::*;
 pub use crate::status;
+pub use crate::sudo;
 pub use crate::system;
 pub use crate::systemd;
 

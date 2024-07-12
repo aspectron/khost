@@ -14,11 +14,11 @@ pub fn install(ctx: &Context) -> Result<()> {
     ))?;
 
     step("Updating aptitude repositories...", || {
-        cmd!("apt", "update", "-y").run()
+        sudo!("apt", "update", "-y").run()
     })?;
 
     step("Upgrading OS packages...", || {
-        cmd!("apt", "upgrade", "-y").run()
+        sudo!("apt", "upgrade", "-y").run()
     })?;
 
     let packages = [
@@ -59,7 +59,7 @@ pub fn install(ctx: &Context) -> Result<()> {
             progress.inc(1);
             progress.set_message(package.pad_to_width(len));
 
-            cmd!("apt", "install", "-y", package).run()?;
+            sudo!("apt", "install", "-y", package).run()?;
         }
 
         Ok("Prerequisites installed successfully.")

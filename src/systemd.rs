@@ -52,85 +52,85 @@ impl Config {
 
 pub fn enable<S: Display>(service_name: S) -> Result<()> {
     step(format!("Enabling {service_name}..."), || {
-        cmd!("systemctl", "enable", service_name.to_string()).run()
+        sudo!("systemctl", "enable", service_name.to_string()).run()
     })
 }
 
 pub fn disable<S: Display>(service_name: S) -> Result<()> {
     step(format!("Disabling {service_name}..."), || {
-        cmd!("systemctl", "disable", service_name.to_string()).run()
+        sudo!("systemctl", "disable", service_name.to_string()).run()
     })
 }
 
 pub fn start<S: Display>(service_name: S) -> Result<()> {
     step(format!("Starting {service_name}..."), || {
-        cmd!("systemctl", "start", service_name.to_string()).run()
+        sudo!("systemctl", "start", service_name.to_string()).run()
     })
 }
 
 pub fn stop<S: Display>(service_name: S) -> Result<()> {
     step(format!("Stopping {service_name}..."), || {
-        cmd!("systemctl", "stop", service_name.to_string()).run()
+        sudo!("systemctl", "stop", service_name.to_string()).run()
     })
 }
 
 pub fn restart<S: Display>(service_name: S) -> Result<()> {
     step(format!("Restarting {service_name}..."), || {
-        cmd!("systemctl", "restart", service_name.to_string()).run()
+        sudo!("systemctl", "restart", service_name.to_string()).run()
     })
 }
 
 pub fn status<S: Display>(service_name: S) -> Result<String> {
-    cmd!("systemctl", "status", service_name.to_string()).read()
+    sudo!("systemctl", "status", service_name.to_string()).read()
 }
 
 pub fn is_active<S: Display>(service_name: S) -> Result<bool> {
-    let output = cmd!("systemctl", "is-active", service_name.to_string()).read()?;
+    let output = sudo!("systemctl", "is-active", service_name.to_string()).read()?;
     Ok(output.trim() == "active")
 }
 
 pub fn is_enabled<S: Display>(service_name: S) -> Result<bool> {
-    let output = cmd!("systemctl", "is-enabled", service_name.to_string()).read()?;
+    let output = sudo!("systemctl", "is-enabled", service_name.to_string()).read()?;
     Ok(output.trim() == "enabled")
 }
 
 pub fn is_failed<S: Display>(service_name: S) -> Result<bool> {
-    let output = cmd!("systemctl", "is-failed", service_name.to_string()).read()?;
+    let output = sudo!("systemctl", "is-failed", service_name.to_string()).read()?;
     Ok(output.trim() == "failed")
 }
 
 pub fn is_active_resp<S: Display>(service_name: S) -> Result<String> {
-    cmd!("systemctl", "is-active", service_name.to_string())
+    sudo!("systemctl", "is-active", service_name.to_string())
         .read()
         .map(|resp| resp.trim().to_string())
 }
 
 pub fn is_enabled_resp<S: Display>(service_name: S) -> Result<String> {
-    cmd!("systemctl", "is-enabled", service_name.to_string())
+    sudo!("systemctl", "is-enabled", service_name.to_string())
         .read()
         .map(|resp| resp.trim().to_string())
 }
 
 pub fn is_failed_resp<S: Display>(service_name: S) -> Result<String> {
-    cmd!("systemctl", "is-failed", service_name.to_string())
+    sudo!("systemctl", "is-failed", service_name.to_string())
         .read()
         .map(|resp| resp.trim().to_string())
 }
 
 pub fn reload<S: Display>(service_name: S) -> Result<()> {
     step(format!("Reloading {service_name}..."), || {
-        cmd!("systemctl", "reload", service_name.to_string()).run()
+        sudo!("systemctl", "reload", service_name.to_string()).run()
     })
 }
 
 pub fn daemon_reload() -> Result<()> {
     step("Reloading systemd daemons...", || {
-        cmd!("systemctl", "daemon-reload").run()
+        sudo!("systemctl", "daemon-reload").run()
     })
 }
 
 pub fn logs<S: Display>(service_name: S) -> Result<()> {
-    let output = cmd!("journalctl", "-u", service_name.to_string()).read()?;
+    let output = sudo!("journalctl", "-u", service_name.to_string()).read()?;
     println!();
     log::info(output)?;
     println!();
@@ -157,7 +157,7 @@ pub fn create(config: Config) -> Result<()> {
         "Creating systemd unit file '{}'",
         config.service_name
     ))?;
-    fs::write(service_path, config.to_string())?;
+    sudo::fs::write(service_path, config.to_string())?;
     // log::success("Systemd unit file created successfully")?;
     Ok(())
 }
@@ -168,7 +168,7 @@ pub fn remove<S: Display>(service_name: S) -> Result<()> {
         log::info(format!("Removing {service_name}..."))?;
         stop(&service_name)?;
         disable(&service_name)?;
-        fs::remove_file(service_path)?;
+        sudo::fs::remove_file(service_path)?;
         daemon_reload()?;
         // log::success(format!("Service '{service_name}' removed"))?;
     } else {

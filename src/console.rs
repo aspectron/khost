@@ -60,7 +60,8 @@ pub trait Action: Describe + Clone + Copy + Eq {
                         if SIGTERM.load(Ordering::Relaxed) {
                             return Err(e);
                         } else {
-                            cliclack::log::error(e.to_string()).ok();
+                            log::error(e.to_string()).ok();
+                            log::error(format!("{e:?}")).ok();
                         }
                     }
                 },

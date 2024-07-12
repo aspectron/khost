@@ -34,14 +34,28 @@ pub mod macros {
         };
     }
 
+    // #[macro_export]
+    // macro_rules! sudo {
+    //     ( $program:expr $(, $arg:expr )* $(,)? ) => {
+    //         {
+    //             // use duct::Expression;
+    //             use std::ffi::OsString;
+    //             let args: std::vec::Vec<OsString> = std::vec!["-kS".into(),$program.into(),$( Into::<OsString>::into($arg) ),*];
+
+    //             let password = $crate::cmd::password().expect("missing user password") + "\n";
+    //             $crate::cmd::cmd("sudo", args).stdin_bytes(password.as_bytes())
+    //         }
+    //     };
+    // }
+
     pub use cmd;
+    // pub use sudo;
 }
 
 pub struct Expression(duct::Expression);
 
 impl Expression {
     pub fn run(&self) -> Result<()> {
-        // use duct::*;
         use std::io::Read;
 
         if !verbose() {
@@ -76,6 +90,10 @@ impl Expression {
         self.0 = self.0.dir(dir);
         self
     }
+
+    pub fn stdin_bytes<T: Into<Vec<u8>>>(&self, bytes: T) -> Expression {
+        Expression(self.0.stdin_bytes(bytes))
+    }
 }
 
 pub fn cmd<T, U>(program: T, args: U) -> Expression
@@ -84,8 +102,6 @@ where
     U: IntoIterator,
     U::Item: Into<OsString>,
 {
-    // let expr =
     let expr = duct::cmd(program, args).stderr_to_stdout();
-
     Expression(expr)
 }
