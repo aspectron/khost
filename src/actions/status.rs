@@ -24,7 +24,8 @@ impl Action for Status {
                 for config in kaspad::active_configs(ctx) {
                     match kaspad::status(config) {
                         Ok(status) => {
-                            status.lines().for_each(|line| println!("{}", line));
+                            println!("{}", ctx.truncate(status));
+                            // status.lines().for_each(|line| println!("{}", line));
                             // println!("{}", status);
                         }
                         Err(e) => {
