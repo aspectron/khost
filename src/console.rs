@@ -53,8 +53,10 @@ pub trait Action: Describe + Clone + Copy + Eq {
 
             match selection {
                 Ok(selection) => match selection.main(ctx) {
-                    Ok(_) => {
-                        break;
+                    Ok(remain) => {
+                        if !remain {
+                            break;
+                        }
                     }
                     Err(e) => {
                         if SIGTERM.load(Ordering::Relaxed) {
@@ -89,7 +91,7 @@ pub trait Action: Describe + Clone + Copy + Eq {
         }
     }
 
-    fn main(&self, _ctx: &mut Context) -> Result<()>;
+    fn main(&self, _ctx: &mut Context) -> Result<bool>;
 }
 
 const S_BAR: Emoji = Emoji("│", "|");

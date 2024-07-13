@@ -18,9 +18,8 @@ pub mod macros {
     macro_rules! sudo {
         ( $program:expr $(, $arg:expr )* $(,)? ) => {
             {
-                // use duct::Expression;
                 use std::ffi::OsString;
-                let args: std::vec::Vec<OsString> = std::vec!["-kS".into(),$program.into(),$( Into::<OsString>::into($arg) ),*];
+                let args: std::vec::Vec<OsString> = std::vec!["-kS".into(),"-p".into(),"".into(),$program.into(),$( Into::<OsString>::into($arg) ),*];
 
                 let password = $crate::sudo::password().expect("missing user password") + "\n";
                 $crate::cmd::cmd("sudo", args).stdin_bytes(password.as_bytes())

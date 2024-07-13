@@ -66,6 +66,8 @@ pub fn install(ctx: &Context) -> Result<()> {
         Ok("Prerequisites installed successfully.")
     })?;
 
+    rust::update()?;
+
     Ok(())
 }
 

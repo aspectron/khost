@@ -38,7 +38,12 @@ fn main() {
     loop {
         match cliclack::password("Enter user password:").interact() {
             Ok(password) => {
-                if duct::cmd!("sudo","-kS","echo","test").stdin_bytes(password.as_bytes()).run().is_ok() {
+                if duct::cmd!("sudo", "-kS", "-p", "", "echo", "khost")
+                    .stdin_bytes(password.as_bytes())
+                    .stderr_to_stdout()
+                    .read()
+                    .is_ok()
+                {
                     sudo::init_password(password);
                     break;
                 } else {

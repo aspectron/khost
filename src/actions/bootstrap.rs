@@ -12,14 +12,14 @@ pub enum Bootstrap {
 }
 
 impl Action for Bootstrap {
-    fn main(&self, ctx: &mut Context) -> Result<()> {
+    fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
             Bootstrap::Default => {
                 if confirm("This will install the Kaspa software and configure services. Continue?")
                     .interact()?
                 {
-
-                    ctx.config.resolver.enabled = confirm("Would you like to install Kaspa resolver?").interact()?;
+                    ctx.config.resolver.enabled =
+                        confirm("Would you like to install Kaspa resolver?").interact()?;
 
                     bootstrap::run(ctx)?;
                     ctx.config.bootstrap = true;
@@ -30,7 +30,7 @@ impl Action for Bootstrap {
                     kaspad::install(ctx)?;
                 }
 
-                Ok(())
+                Ok(false)
             }
             Bootstrap::Skip => {
                 ctx.config.bootstrap = true;
@@ -38,7 +38,7 @@ impl Action for Bootstrap {
 
                 log::info("You can perform a full install later from the Advanced menu.")?;
 
-                Ok(())
+                Ok(false)
             }
         }
     }

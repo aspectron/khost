@@ -86,34 +86,43 @@ pub fn status<S: Display>(service_name: S) -> Result<String> {
 }
 
 pub fn is_active<S: Display>(service_name: S) -> Result<bool> {
-    let output = sudo!("systemctl", "is-active", service_name.to_string()).read()?;
+    let output = sudo!("systemctl", "is-active", service_name.to_string())
+        .unchecked()
+        .read()?;
     Ok(output.trim() == "active")
 }
 
 pub fn is_enabled<S: Display>(service_name: S) -> Result<bool> {
-    let output = sudo!("systemctl", "is-enabled", service_name.to_string()).read()?;
+    let output = sudo!("systemctl", "is-enabled", service_name.to_string())
+        .unchecked()
+        .read()?;
     Ok(output.trim() == "enabled")
 }
 
 pub fn is_failed<S: Display>(service_name: S) -> Result<bool> {
-    let output = sudo!("systemctl", "is-failed", service_name.to_string()).read()?;
+    let output = sudo!("systemctl", "is-failed", service_name.to_string())
+        .unchecked()
+        .read()?;
     Ok(output.trim() == "failed")
 }
 
 pub fn is_active_resp<S: Display>(service_name: S) -> Result<String> {
     sudo!("systemctl", "is-active", service_name.to_string())
+        .unchecked()
         .read()
         .map(|resp| resp.trim().to_string())
 }
 
 pub fn is_enabled_resp<S: Display>(service_name: S) -> Result<String> {
     sudo!("systemctl", "is-enabled", service_name.to_string())
+        .unchecked()
         .read()
         .map(|resp| resp.trim().to_string())
 }
 
 pub fn is_failed_resp<S: Display>(service_name: S) -> Result<String> {
     sudo!("systemctl", "is-failed", service_name.to_string())
+        .unchecked()
         .read()
         .map(|resp| resp.trim().to_string())
 }

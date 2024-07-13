@@ -91,8 +91,12 @@ impl Expression {
         self
     }
 
-    pub fn stdin_bytes<T: Into<Vec<u8>>>(&self, bytes: T) -> Expression {
-        Expression(self.0.stdin_bytes(bytes))
+    pub fn unchecked(&self) -> Self {
+        Self(self.0.unchecked())
+    }
+
+    pub fn stdin_bytes<T: Into<Vec<u8>>>(&self, bytes: T) -> Self {
+        Self(self.0.stdin_bytes(bytes))
     }
 }
 

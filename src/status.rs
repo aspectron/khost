@@ -136,4 +136,6 @@ pub fn conflicts(_ctx: &Context, _status: &Status) {
             .ok();
         }
     }
+
+    rust::check().ok();
 }

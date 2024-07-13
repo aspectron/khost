@@ -17,14 +17,12 @@ pub enum Status {
 }
 
 impl Action for Status {
-    fn main(&self, _ctx: &mut Context) -> Result<()> {
+    fn main(&self, _ctx: &mut Context) -> Result<bool> {
         match self {
-            Status::Back => {}
-            Status::Kaspad => {}
-            Status::Resolver => {}
-            Status::Nginx => {}
+            Status::Back => Ok(false),
+            Status::Kaspad => Ok(true),
+            Status::Resolver => Ok(true),
+            Status::Nginx => Ok(true),
         }
-
-        Ok(())
     }
 }

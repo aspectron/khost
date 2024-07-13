@@ -24,24 +24,29 @@ pub enum Main {
 }
 
 impl Action for Main {
-    fn main(&self, ctx: &mut Context) -> Result<()> {
+    fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
             Main::Configure => {
                 Configure::select(ctx)?;
+                Ok(true)
             }
 
             Main::Status => {
                 Status::select(ctx)?;
+                Ok(true)
             }
 
             Main::Control => {
                 // TODO - multi-select service to enable/disable
+                Ok(true)
             }
             Main::Update => {
                 Update::select(ctx)?;
+                Ok(true)
             }
             Main::Advanced => {
                 Advanced::select(ctx)?;
+                Ok(true)
             }
             Main::Exit => {
                 cliclack::outro("bye!")?;
@@ -49,7 +54,5 @@ impl Action for Main {
                 std::process::exit(0);
             }
         }
-
-        Ok(())
     }
 }

@@ -6,10 +6,8 @@ pub enum Advanced {
     /// Go back to the previous menu
     #[describe("Back")]
     Back,
-    /// Delete database and logs
-    #[describe("Purge Kaspa Data folder")]
+    #[describe("Delete Kaspa Data folders")]
     PurgeData,
-    /// Perform full installation
     #[describe("Full installation")]
     Full,
     #[describe("Uninstall Kaspa software")]
@@ -17,9 +15,9 @@ pub enum Advanced {
 }
 
 impl Action for Advanced {
-    fn main(&self, ctx: &mut Context) -> Result<()> {
+    fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
-            Advanced::Back => {}
+            Advanced::Back => Ok(false),
             Advanced::PurgeData => {
                 let mut folders = HashMap::new();
                 for config in ctx.config.kaspad.iter() {
@@ -53,7 +51,7 @@ impl Action for Advanced {
                         .collect::<Vec<_>>();
                     println!("Selected folders: {:?}", targets);
                 }
-                // Ok(())
+                Ok(true)
 
                 // if confirm("Are you sure you want to delete the Kaspa Data folder?").interact()? {
                 //     kaspad::stop_all(ctx)?;
@@ -66,6 +64,7 @@ impl Action for Advanced {
             }
             Advanced::Full => {
                 actions::Bootstrap::select(ctx)?;
+                Ok(true)
             }
             Advanced::Uninstall => {
                 if confirm("Are you sure you want to uninstall Kaspa software?").interact()? {
@@ -74,9 +73,8 @@ impl Action for Advanced {
                     kaspad::uninstall(ctx)?;
                     log::success("Kaspa software uninstalled successfully")?;
                 }
+                Ok(true)
             }
         }
-
-        Ok(())
     }
 }

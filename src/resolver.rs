@@ -3,7 +3,7 @@ use nginx::prelude::*;
 
 pub const SERVICE_NAME: &str = "kaspa-resolver";
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     pub enabled: bool,
     pub sync: bool,
@@ -12,16 +12,16 @@ pub struct Config {
     pub http: Option<Interface>,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            enabled: false,
-            sync: false,
-            stats: false,
-            http: None,
-        }
-    }
-}
+// impl Default for Config {
+//     fn default() -> Self {
+//         Config {
+//             enabled: false,
+//             sync: false,
+//             stats: false,
+//             http: None,
+//         }
+//     }
+// }
 
 impl Config {
     fn with_stats(self) -> Self {
@@ -107,8 +107,7 @@ pub fn install(ctx: &mut Context) -> Result<()> {
     Ok(())
 }
 
-pub fn nginx_config(ctx: &Context) -> NginxConfig {
-
+pub fn nginx_config(_ctx: &Context) -> NginxConfig {
     let fqdns = fqdn::get(false);
     let server_kind = ServerKind::http().with_fqdn(fqdns);
     let proxy_kind = ProxyKind::http(8989);
@@ -158,7 +157,6 @@ pub fn uninstall() -> Result<()> {
 }
 
 pub fn build() -> Result<()> {
-
     rust::update()?;
 
     step("Building resolver...", || {

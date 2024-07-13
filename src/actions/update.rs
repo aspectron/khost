@@ -6,46 +6,59 @@ pub enum Update {
     /// Go back to the previous menu
     #[describe("Back")]
     Back,
+    /// Update services
+    #[describe("Update services")]
+    Services,
     /// Update OS and all services
-    #[describe("Update all")]
-    All,
+    #[describe("Update everything")]
+    Everything,
+    /// Update only OS
     #[describe("OS prerequisites")]
     Os,
+    /// Update only Rust Compiler
     #[describe("Rust Compiler")]
     RustC,
+    /// Update only Kaspa Resolver
     #[describe("Resolver")]
     Resolver,
+    /// Update only Kaspa p2p node
     #[describe("Kaspa p2p node")]
     Kaspad,
 }
 
 impl Action for Update {
-    fn main(&self, ctx: &mut Context) -> Result<()> {
+    fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
-            Update::All => {
+            Update::Everything => {
                 base::update(ctx)?;
                 rust::update()?;
                 resolver::update(ctx)?;
                 kaspad::update(ctx)?;
-                Ok(())
+                Ok(false)
+            }
+            Update::Services => {
+                rust::update()?;
+                resolver::update(ctx)?;
+                kaspad::update(ctx)?;
+                Ok(false)
             }
             Update::Os => {
                 base::update(ctx)?;
-                Ok(())
+                Ok(true)
             }
             Update::RustC => {
                 rust::update()?;
-                Ok(())
+                Ok(true)
             }
             Update::Resolver => {
                 resolver::update(ctx)?;
-                Ok(())
+                Ok(true)
             }
             Update::Kaspad => {
                 kaspad::update(ctx)?;
-                Ok(())
+                Ok(true)
             }
-            Update::Back => Ok(()),
+            Update::Back => Ok(false),
         }
     }
 }
