@@ -6,10 +6,12 @@ pub enum Advanced {
     /// Go back to the previous menu
     #[describe("Back")]
     Back,
-    #[describe("Delete Kaspa Data folders")]
-    PurgeData,
+    #[describe("Rebuild configuration")]
+    Rebuild,
     #[describe("Full installation")]
     Full,
+    #[describe("Delete Kaspa Data folders")]
+    PurgeData,
     #[describe("Uninstall Kaspa software")]
     Uninstall,
 }
@@ -18,6 +20,10 @@ impl Action for Advanced {
     fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
             Advanced::Back => Ok(false),
+            Advanced::Rebuild => {
+                kaspad::reconfigure(ctx, true)?;
+                Ok(true)
+            }
             Advanced::PurgeData => {
                 let mut folders = HashMap::new();
                 for config in ctx.config.kaspad.iter() {
