@@ -168,6 +168,9 @@ impl Display for Config {
             writeln!(f)?;
         }
 
+        writeln!(f, "}}")?;
+        writeln!(f)?;
+
         Ok(())
     }
 }
