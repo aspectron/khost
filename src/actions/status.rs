@@ -24,13 +24,16 @@ impl Action for Status {
                 for config in kaspad::active_configs(ctx) {
                     match kaspad::status(config) {
                         Ok(status) => {
-                            println!("{}", status);
+                            status.lines().for_each(|line| println!("{}", line));
+                            // println!("{}", status);
                         }
                         Err(e) => {
                             log::error(format!("Failed to get kaspad status: {}", e))?;
                         }
                     }
                 }
+
+                println!();
 
                 Ok(true)
             }
