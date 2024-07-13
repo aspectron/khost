@@ -24,7 +24,7 @@ impl Context {
         };
 
         let terminal_width = termion::terminal_size()
-            .map(|size| size.1 as usize)
+            .map(|size| size.0 as usize)
             .unwrap_or(80);
 
         Ok(Context {
