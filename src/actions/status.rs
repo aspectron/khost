@@ -17,10 +17,23 @@ pub enum Status {
 }
 
 impl Action for Status {
-    fn main(&self, _ctx: &mut Context) -> Result<bool> {
+    fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
             Status::Back => Ok(false),
-            Status::Kaspad => Ok(true),
+            Status::Kaspad => {
+                for config in kaspad::active_configs(ctx) {
+                    match kaspad::status(config) {
+                        Ok(status) => {
+                            println!("{}", status);
+                        }
+                        Err(e) => {
+                            log::error(format!("Failed to get kaspad status: {}", e))?;
+                        }
+                    }
+                }
+
+                Ok(true)
+            }
             Status::Resolver => Ok(true),
             Status::Nginx => Ok(true),
         }
