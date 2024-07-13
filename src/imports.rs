@@ -47,5 +47,6 @@ pub use crate::status;
 pub use crate::sudo;
 pub use crate::system;
 pub use crate::systemd;
+pub use crate::utils::*;
 
 pub use crate::*;

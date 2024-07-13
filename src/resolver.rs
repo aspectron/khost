@@ -210,6 +210,10 @@ pub fn restart() -> Result<()> {
     systemd::restart(SERVICE_NAME)
 }
 
+pub fn status() -> Result<String> {
+    systemd::status(SERVICE_NAME)
+}
+
 pub fn logs() -> Result<()> {
     systemd::logs(SERVICE_NAME)
 }

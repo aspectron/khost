@@ -24,9 +24,8 @@ impl Action for Status {
                 for config in kaspad::active_configs(ctx) {
                     match kaspad::status(config) {
                         Ok(status) => {
-                            println!("{}", ctx.truncate(status));
-                            // status.lines().for_each(|line| println!("{}", line));
-                            // println!("{}", status);
+                            println!("{}", truncate_to_terminal(status));
+                            println!();
                         }
                         Err(e) => {
                             log::error(format!("Failed to get kaspad status: {}", e))?;
@@ -34,12 +33,20 @@ impl Action for Status {
                     }
                 }
 
-                println!();
-
                 Ok(true)
             }
-            Status::Resolver => Ok(true),
-            Status::Nginx => Ok(true),
+            Status::Resolver => {
+                let status = resolver::status()?;
+                println!("{}", truncate_to_terminal(status));
+                println!();
+                Ok(true)
+            }
+            Status::Nginx => {
+                let status = nginx::status()?;
+                println!("{}", truncate_to_terminal(status));
+                println!();
+                Ok(true)
+            }
         }
     }
 }

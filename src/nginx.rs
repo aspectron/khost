@@ -196,6 +196,10 @@ pub fn reload() -> Result<()> {
     })
 }
 
+pub fn status() -> Result<String> {
+    systemd::status("nginx")
+}
+
 pub fn reconfigure() -> Result<()> {
     // TODO
     // let nginx_config = fs::read_to_string(PathBuf::from(NGINX_CONFIG_PATH).join("nginx.conf"))?;
