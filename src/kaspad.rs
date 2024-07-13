@@ -4,6 +4,7 @@ use nginx::prelude::*;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     enabled: bool,
+    origin: Origin,
     network: Network,
     data_folder: Option<PathBuf>,
     enable_upnp: bool,
@@ -14,45 +15,42 @@ pub struct Config {
 }
 
 impl Service for Config {
-    fn service_name(&self) -> String {
-        format!("kaspa-{}", self.network)
+    fn service_detail(&self) -> ServiceDetail {
+        ServiceDetail::new("Kaspa p2p node", format!("kaspa-{}", self.network))
     }
 }
 
 impl Config {
-    pub fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-
-    pub fn data_folder(&self) -> PathBuf {
-        self.data_folder.clone().unwrap_or_else(|| {
-            home_folder()
-                .join(".rusty-kaspa")
-                .join(service_name(&self.network))
-        })
-    }
-
-    pub fn network(&self) -> Network {
-        self.network
-    }
-}
-
-impl From<Network> for Config {
-    fn from(network: Network) -> Self {
+    pub fn new(origin: Origin, network: Network) -> Self {
         let (grpc, wrpc) = match network {
             Network::Mainnet => (16110, 17110),
             Network::Testnet10 => (16210, 17210),
             Network::Testnet11 => (16310, 17310),
         };
 
-        Config {
+        Self {
             enabled: false,
+            origin,
             network,
             data_folder: None,
-            enable_upnp: true,
+            enable_upnp: false,
             grpc: Some(Interface::Local(grpc)),
-            wrpc: Some(Interface::Public(wrpc)),
+            wrpc: Some(Interface::Local(wrpc)),
         }
+    }
+
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    pub fn data_folder(&self) -> PathBuf {
+        self.data_folder
+            .clone()
+            .unwrap_or_else(|| home_folder().join(".rusty-kaspa").join(service_name(self)))
+    }
+
+    pub fn network(&self) -> Network {
+        self.network
     }
 }
 
@@ -111,6 +109,14 @@ impl From<&Config> for Vec<String> {
     }
 }
 
+pub fn unique_origins(ctx: &Context) -> HashSet<Origin> {
+    ctx.config
+        .kaspad
+        .iter()
+        .map(|config| config.origin.clone())
+        .collect()
+}
+
 pub fn active_configs(ctx: &Context) -> impl Iterator<Item = &Config> {
     ctx.config
         .kaspad
@@ -125,26 +131,24 @@ pub fn inactive_configs(ctx: &Context) -> impl Iterator<Item = &Config> {
         .filter(|config| !config.is_enabled())
 }
 
-pub fn fetch() -> Result<()> {
-    let path = folder();
+pub fn fetch(ctx: &Context) -> Result<()> {
+    for origin in unique_origins(ctx) {
+        let path = folder(&origin);
 
-    if path.exists() {
-        git::restore(&path)?;
-        git::pull(&path)?;
-    } else {
-        git::clone(
-            "https://github.com/aspectron/rusty-kaspa",
-            &path,
-            Some("omega"),
-        )?;
+        if path.exists() {
+            git::restore(&path, &origin)?;
+            git::pull(&path, &origin)?;
+        } else {
+            git::clone(&path, &origin)?;
+        }
     }
 
     Ok(())
 }
 
 pub fn install(ctx: &mut Context) -> Result<()> {
-    fetch()?;
-    build()?;
+    fetch(ctx)?;
+    build(ctx)?;
 
     reconfigure(ctx, true)?;
 
@@ -165,8 +169,8 @@ pub fn nginx_config(_ctx: &Context, config: &Config) -> NginxConfig {
 }
 
 pub fn update(ctx: &Context) -> Result<()> {
-    fetch()?;
-    build()?;
+    fetch(ctx)?;
+    build(ctx)?;
     for config in active_configs(ctx) {
         restart(config)?;
     }
@@ -194,7 +198,7 @@ pub fn uninstall(ctx: &Context) -> Result<()> {
         }
     }
 
-    let path = folder();
+    let path = base_folder();
     if path.exists() {
         step("Removing Rusty Kaspa p2p node...", || {
             fs::remove_dir_all(&path)?;
@@ -236,35 +240,42 @@ pub fn uninstall(ctx: &Context) -> Result<()> {
     Ok(())
 }
 
-pub fn build() -> Result<()> {
+pub fn build(ctx: &Context) -> Result<()> {
     rust::update()?;
 
-    step("Building Kaspad p2p node...", || {
-        cmd!("cargo", "build", "--release", "--bin", "kaspad")
-            .dir(folder())
-            .run()
-    })?;
+    for origin in unique_origins(ctx) {
+        step("Building Kaspad p2p node...", || {
+            cmd!("cargo", "build", "--release", "--bin", "kaspad")
+                .dir(folder(&origin))
+                .run()
+        })?;
 
-    if let Some(version) = version() {
-        log::success("Build successful")?;
-        log::info(format!("Kaspad version: {}", version))?;
-        Ok(())
-    } else {
-        log::error("Unable to determine kaspad version")?;
-        Err(Error::custom("Failed to execute kaspad"))
+        if let Some(version) = version(&origin) {
+            log::success("Build successful")?;
+            log::info(format!("Kaspad version: {}", version))?;
+            // Ok(())
+        } else {
+            log::error("Unable to determine kaspad version")?;
+        }
     }
+
+    Ok(())
 }
 
-pub fn binary() -> PathBuf {
-    folder().join("target/release/kaspad")
+pub fn binary(origin: &Origin) -> PathBuf {
+    folder(origin).join("target/release/kaspad")
 }
 
-pub fn folder() -> PathBuf {
+pub fn folder(origin: &Origin) -> PathBuf {
+    base_folder().join(origin.folder())
+}
+
+pub fn base_folder() -> PathBuf {
     root_folder().join("rusty-kaspa")
 }
 
-pub fn version() -> Option<String> {
-    duct::cmd!(binary(), "--version")
+pub fn version(origin: &Origin) -> Option<String> {
+    duct::cmd!(binary(origin), "--version")
         .read()
         .ok()
         .and_then(|s| s.trim().split(' ').last().map(String::from))
@@ -275,7 +286,7 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
     let description = format!("Kaspad p2p Node ({})", config.network);
 
     let args = Vec::<String>::from(config);
-    let exec_start = [binary().display().to_string()]
+    let exec_start = [binary(&config.origin).display().to_string()]
         .into_iter()
         .chain(args)
         .collect::<Vec<_>>();
@@ -300,10 +311,6 @@ pub fn restart(config: &Config) -> Result<()> {
 
 pub fn status(config: &Config) -> Result<String> {
     systemd::status(service_name(config))
-}
-
-pub fn logs(config: &Config) -> Result<()> {
-    systemd::logs(service_name(config))
 }
 
 pub fn is_active(config: &Config) -> Result<bool> {
@@ -347,11 +354,16 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
         let service_name = service_name(config);
         if systemd::exists(&service_name) {
             if systemd::is_active(&service_name)? {
-                systemd::stop(&service_name)?;
+                step(format!("Bringing down '{}'", service_name), || {
+                    systemd::stop(&service_name)
+                })?;
             }
-            systemd::disable(&service_name)?;
-            systemd::remove(&service_name)?;
-            reconfigure_systemd = true;
+            step(format!("Removing service '{}'", service_name), || {
+                systemd::disable(&service_name)?;
+                systemd::remove(&service_name)?;
+                reconfigure_systemd = true;
+                Ok(())
+            })?;
         }
 
         if nginx::exists(&service_name) {
@@ -362,25 +374,30 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
 
     for config in active_configs(ctx) {
         let service_name = service_name(config);
+        step(format!("Configuring '{}'", service_name), || {
+            if force || !systemd::exists(&service_name) {
+                create_systemd_unit(ctx, config)?;
+                reconfigure_systemd = true;
+            }
 
-        if force || !systemd::exists(&service_name) {
-            create_systemd_unit(ctx, config)?;
-            reconfigure_systemd = true;
-        }
+            if force || !nginx::exists(&service_name) {
+                nginx::create(nginx_config(ctx, config))?;
+                reconfigure_nginx = true;
+            }
 
-        if force || !nginx::exists(&service_name) {
-            nginx::create(nginx_config(ctx, config))?;
-            reconfigure_nginx = true;
-        }
+            Ok(())
+        })?;
     }
 
     if reconfigure_systemd {
-        systemd::daemon_reload()?;
+        step("Reloading systemd daemon...", systemd::daemon_reload)?;
 
         for config in active_configs(ctx) {
             let service_name = service_name(config);
-            systemd::enable(&service_name)?;
-            systemd::start(&service_name)?;
+            step(format!("Brining up '{}'", service_name), || {
+                systemd::enable(&service_name)?;
+                systemd::start(&service_name)
+            })?;
         }
     }
 

@@ -3,16 +3,19 @@ use crate::imports::*;
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Status and logs"]
 pub enum Status {
-    /// Go back to the previous menu
     #[describe("Back")]
     Back,
-    /// The heart of the Kaspa network
-    #[describe("Kaspa p2p node")]
+    // #[describe("Service status")]
+    // FollowLogs,
+    #[describe("Follow logs")]
+    FollowLogs,
+    #[describe("View logs")]
+    ViewLogs,
+    #[describe("Kaspa p2p node status")]
     Kaspad,
-    /// Node wRPC load balancer
-    #[describe("Resolver")]
+    #[describe("Resolver service status")]
     Resolver,
-    #[describe("Nginx HTTP proxy")]
+    #[describe("Nginx service status")]
     Nginx,
 }
 
@@ -20,6 +23,28 @@ impl Action for Status {
     fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
             Status::Back => Ok(false),
+            Status::FollowLogs => {
+                match ctx.select_active_service("Select service to follow logs") {
+                    Ok(detail) => {
+                        sudo!("journalctl", "-fu", detail.name).inner().run()?;
+                    }
+                    Err(_) => {
+                        println!();
+                    }
+                }
+                Ok(true)
+            }
+            Status::ViewLogs => {
+                match ctx.select_active_service("Select service to view logs") {
+                    Ok(detail) => {
+                        sudo!("journalctl", "-u", detail.name).inner().run()?;
+                    }
+                    Err(_) => {
+                        println!();
+                    }
+                }
+                Ok(true)
+            }
             Status::Kaspad => {
                 for config in kaspad::active_configs(ctx) {
                     match kaspad::status(config) {

@@ -98,6 +98,10 @@ impl Expression {
     pub fn stdin_bytes<T: Into<Vec<u8>>>(&self, bytes: T) -> Self {
         Self(self.0.stdin_bytes(bytes))
     }
+
+    pub fn inner(self) -> duct::Expression {
+        self.0
+    }
 }
 
 pub fn cmd<T, U>(program: T, args: U) -> Expression

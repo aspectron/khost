@@ -3,39 +3,48 @@ use nginx::prelude::*;
 
 pub const SERVICE_NAME: &str = "kaspa-resolver";
 
-#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     pub enabled: bool,
+    pub origin: Origin,
     pub sync: bool,
     pub stats: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub http: Option<Interface>,
 }
 
-// impl Default for Config {
-//     fn default() -> Self {
-//         Config {
-//             enabled: false,
-//             sync: false,
-//             stats: false,
-//             http: None,
-//         }
-//     }
-// }
+impl Service for Config {
+    fn service_detail(&self) -> ServiceDetail {
+        ServiceDetail::new("Kaspa RPC resolver", SERVICE_NAME)
+    }
+}
 
 impl Config {
-    fn with_stats(self) -> Self {
+    pub fn new(origin: Origin) -> Self {
+        Self {
+            enabled: false,
+            origin,
+            sync: false,
+            stats: true,
+            http: None,
+        }
+    }
+
+    pub fn with_stats(self) -> Self {
         Self {
             stats: true,
             ..self
         }
     }
 
-    // fn with_public_interface(self, port: u16) -> Self {
-    //     Self { http: Some(Interface::Public(port)), ..self }
-    // }
+    pub fn with_public_interface(self, port: u16) -> Self {
+        Self {
+            http: Some(Interface::Public(port)),
+            ..self
+        }
+    }
 
-    fn with_local_interface(self, port: u16) -> Self {
+    pub fn with_local_interface(self, port: u16) -> Self {
         Self {
             http: Some(Interface::Local(port)),
             ..self
@@ -59,15 +68,15 @@ impl From<&Config> for Vec<String> {
     }
 }
 
-pub fn fetch() -> Result<()> {
-    let path = folder();
+pub fn fetch(origin: &Origin) -> Result<()> {
+    let path = folder(origin);
 
     track("Synchronizing resolver sources...", |step| {
         if path.exists() {
-            git::restore(&path)?;
-            git::pull(&path)?;
+            git::restore(&path, origin)?;
+            git::pull(&path, origin)?;
         } else {
-            git::clone("https://github.com/aspectron/kaspa-resolver", &path, None)?;
+            git::clone(&path, origin)?;
         }
 
         step.done("Resolver sources synchronized...")
@@ -76,11 +85,15 @@ pub fn fetch() -> Result<()> {
     Ok(())
 }
 
-pub fn binary() -> PathBuf {
-    folder().join("target/release/kaspa-resolver")
+pub fn binary(origin: &Origin) -> PathBuf {
+    folder(origin).join("target/release/kaspa-resolver")
 }
 
-pub fn folder() -> PathBuf {
+pub fn folder(origin: &Origin) -> PathBuf {
+    base_folder().join(origin.folder())
+}
+
+pub fn base_folder() -> PathBuf {
     root_folder().join("kaspa-resolver")
 }
 
@@ -91,12 +104,12 @@ pub fn install(ctx: &mut Context) -> Result<()> {
 
     log::remark("Installing Kaspa wPRC resolver...")?;
 
-    fetch()?;
-    build()?;
+    let config = &ctx.config.resolver;
 
-    let config = Config::default().with_stats().with_local_interface(8989);
+    fetch(&config.origin)?;
+    build(&config.origin)?;
 
-    create_systemd_unit(ctx, &config)?;
+    create_systemd_unit(ctx, config)?;
     systemd::daemon_reload()?;
     systemd::enable(SERVICE_NAME)?;
     systemd::start(SERVICE_NAME)?;
@@ -116,12 +129,14 @@ pub fn nginx_config(_ctx: &Context) -> NginxConfig {
 }
 
 pub fn update(ctx: &Context) -> Result<()> {
-    if !ctx.config.resolver.enabled {
+    let config = &ctx.config.resolver;
+
+    if !config.enabled {
         return Ok(());
     }
 
-    fetch()?;
-    build()?;
+    fetch(&config.origin)?;
+    build(&config.origin)?;
     restart()?;
     Ok(())
 }
@@ -144,7 +159,7 @@ pub fn uninstall() -> Result<()> {
         log::error(format!("Systemd unit file '{SERVICE_NAME}' not found"))?;
     }
 
-    let path = folder();
+    let path = base_folder();
     if path.exists() {
         log::info("Removing resolver...")?;
         fs::remove_dir_all(&path)?;
@@ -156,14 +171,16 @@ pub fn uninstall() -> Result<()> {
     Ok(())
 }
 
-pub fn build() -> Result<()> {
+pub fn build(origin: &Origin) -> Result<()> {
     rust::update()?;
 
     step("Building resolver...", || {
-        cmd!("cargo", "build", "--release").dir(folder()).run()
+        cmd!("cargo", "build", "--release")
+            .dir(folder(origin))
+            .run()
     })?;
 
-    if let Some(version) = version() {
+    if let Some(version) = version(origin) {
         log::success("Build successful")?;
         log::info(format!("Resolver version: {}", version))?;
         Ok(())
@@ -173,8 +190,8 @@ pub fn build() -> Result<()> {
     }
 }
 
-pub fn version() -> Option<String> {
-    cmd!(binary(), "--version")
+pub fn version(origin: &Origin) -> Option<String> {
+    cmd!(binary(origin), "--version")
         .read()
         .ok()
         .and_then(|s| s.trim().split(' ').last().map(String::from))
@@ -182,7 +199,7 @@ pub fn version() -> Option<String> {
 
 pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
     let args = Vec::<String>::from(config);
-    let exec_start = [binary().display().to_string()]
+    let exec_start = [binary(&config.origin).display().to_string()]
         .into_iter()
         .chain(args)
         .collect::<Vec<_>>();
@@ -212,10 +229,6 @@ pub fn restart() -> Result<()> {
 
 pub fn status() -> Result<String> {
     systemd::status(SERVICE_NAME)
-}
-
-pub fn logs() -> Result<()> {
-    systemd::logs(SERVICE_NAME)
 }
 
 pub fn is_active() -> Result<bool> {

@@ -9,21 +9,28 @@ pub struct Config {
     pub ip: Option<String>,
     pub kaspad: Vec<kaspad::Config>,
     pub resolver: resolver::Config,
-    // pub ssl : bool,
 }
 
-impl Default for Config {
-    fn default() -> Self {
-        Config {
+impl Config {
+    pub fn try_new() -> Result<Self> {
+        let origin = Origin::try_new("https://github.com/aspectron/kaspa-resolver", None)?;
+        let resolver = resolver::Config::new(origin)
+            .with_stats()
+            .with_local_interface(8989);
+
+        let origin = Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("origin"))?;
+        let kaspad = Network::into_iter()
+            .map(|network| kaspad::Config::new(origin.clone(), network))
+            .collect::<Vec<_>>();
+
+        Ok(Config {
             bootstrap: false,
             public: true,
             fqdn: None,
             ip: None,
-            // kaspad: vec![kaspad::Config::default()],
-            kaspad: Network::into_iter().map(Into::into).collect(),
-            resolver: resolver::Config::default(),
-            // ssl: false,
-        }
+            kaspad,
+            resolver,
+        })
     }
 }
 

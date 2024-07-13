@@ -40,12 +40,12 @@ pub mod fs {
     {
         let temp = temp_folder().join("temp.txt");
         fs::write(&temp, content)?;
-        sudo!("mv", temp, path.as_ref()).run()?;
+        sudo!("mv", "-f", temp, path.as_ref()).run()?;
         Ok(())
     }
 
     pub fn remove_file<P: AsRef<Path>>(path: P) -> Result<()> {
-        sudo!("rm", path.as_ref()).run()?;
+        sudo!("rm", "-f", path.as_ref()).run()?;
         Ok(())
     }
 }

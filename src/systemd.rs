@@ -52,33 +52,23 @@ impl Config {
 }
 
 pub fn enable<S: Display>(service_name: S) -> Result<()> {
-    step(format!("Enabling {service_name}..."), || {
-        sudo!("systemctl", "enable", service_name.to_string()).run()
-    })
+    sudo!("systemctl", "enable", service_name.to_string()).run()
 }
 
 pub fn disable<S: Display>(service_name: S) -> Result<()> {
-    step(format!("Disabling {service_name}..."), || {
-        sudo!("systemctl", "disable", service_name.to_string()).run()
-    })
+    sudo!("systemctl", "disable", service_name.to_string()).run()
 }
 
 pub fn start<S: Display>(service_name: S) -> Result<()> {
-    step(format!("Starting {service_name}..."), || {
-        sudo!("systemctl", "start", service_name.to_string()).run()
-    })
+    sudo!("systemctl", "start", service_name.to_string()).run()
 }
 
 pub fn stop<S: Display>(service_name: S) -> Result<()> {
-    step(format!("Stopping {service_name}..."), || {
-        sudo!("systemctl", "stop", service_name.to_string()).run()
-    })
+    sudo!("systemctl", "stop", service_name.to_string()).run()
 }
 
 pub fn restart<S: Display>(service_name: S) -> Result<()> {
-    step(format!("Restarting {service_name}..."), || {
-        sudo!("systemctl", "restart", service_name.to_string()).run()
-    })
+    sudo!("systemctl", "restart", service_name.to_string()).run()
 }
 
 pub fn status<S: Display>(service_name: S) -> Result<String> {
@@ -139,14 +129,6 @@ pub fn daemon_reload() -> Result<()> {
     })
 }
 
-pub fn logs<S: Display>(service_name: S) -> Result<()> {
-    let output = sudo!("journalctl", "-u", service_name.to_string()).read()?;
-    println!();
-    log::info(output)?;
-    println!();
-    Ok(())
-}
-
 pub fn exists(service_name: &str) -> bool {
     service_path(service_name).exists()
 }
@@ -157,35 +139,14 @@ pub fn service_path<S: Display>(service_name: S) -> PathBuf {
 
 pub fn create(config: Config) -> Result<()> {
     let service_path = service_path(&config.service_name);
-    if service_path.exists() {
-        log::warning(format!(
-            "Overwriting existing unit file '{}'",
-            service_path.display()
-        ))?;
-    }
-    log::info(format!(
-        "Creating systemd unit file '{}'",
-        config.service_name
-    ))?;
     sudo::fs::write(service_path, config.to_string())?;
-    // log::success("Systemd unit file created successfully")?;
     Ok(())
 }
 
 pub fn remove<S: Display>(service_name: S) -> Result<()> {
     let service_path = service_path(&service_name);
     if service_path.exists() {
-        log::info(format!("Removing {service_name}..."))?;
-        stop(&service_name)?;
-        disable(&service_name)?;
         sudo::fs::remove_file(service_path)?;
-        daemon_reload()?;
-        // log::success(format!("Service '{service_name}' removed"))?;
-    } else {
-        log::error(format!(
-            "Systemd unit file '{}' not found",
-            service_path.display()
-        ))?;
     }
     Ok(())
 }

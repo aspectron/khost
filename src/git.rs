@@ -1,28 +1,68 @@
 use crate::imports::*;
 
-pub fn clone<U: Display, P: AsRef<Path>>(url: U, path: P, branch: Option<&str>) -> Result<()> {
-    let url = url.to_string();
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct Origin {
+    repository: String,
+    branch: Option<String>,
+}
+
+impl Origin {
+    pub fn try_new(repo: &str, branch: Option<&str>) -> Result<Self> {
+        let repository = repo.to_string();
+        let parts = repository.split('/').collect::<Vec<_>>();
+        if parts.len() < 3 {
+            Err(Error::Repository(repository))
+        } else {
+            Ok(Self {
+                repository: repo.to_string(),
+                branch: branch.map(String::from),
+            })
+        }
+    }
+
+    pub fn folder(&self) -> PathBuf {
+        let repo = self.repository.replace(".git", "");
+        let mut parts = repo.split('/').collect::<VecDeque<_>>();
+        let _ = parts.pop_back().unwrap();
+        let org = parts.pop_back().unwrap();
+        PathBuf::from(format!(
+            "{}/{}",
+            org,
+            self.branch.as_deref().unwrap_or("master")
+        ))
+    }
+
+    pub fn repository(&self) -> &str {
+        &self.repository
+    }
+
+    pub fn branch(&self) -> Option<&str> {
+        self.branch.as_deref()
+    }
+}
+
+pub fn clone<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
     let path = path.as_ref().display().to_string();
 
-    if let Some(branch) = branch {
-        cmd("git", &["clone", "-b", branch, &url, &path]).run()?;
+    if let Some(branch) = origin.branch() {
+        cmd("git", &["clone", "-b", branch, origin.repository(), &path]).run()?;
     } else {
-        cmd("git", &["clone", &url, &path]).run()?;
+        cmd("git", &["clone", origin.repository(), &path]).run()?;
     }
 
     Ok(())
 }
 
-pub fn pull<P: AsRef<Path>>(path: P) -> Result<()> {
-    let path = path.as_ref().display().to_string();
+pub fn pull<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
+    let path = path.as_ref().join(origin.folder()).display().to_string();
 
     cmd("git", &["pull", &path]).dir(path).run()?;
 
     Ok(())
 }
 
-pub fn restore<P: AsRef<Path>>(path: P) -> Result<()> {
-    let path = path.as_ref().display().to_string();
+pub fn restore<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
+    let path = path.as_ref().join(origin.folder()).display().to_string();
 
     cmd("git", &["restore", &path]).dir(path).run()?;
 

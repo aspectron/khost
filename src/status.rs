@@ -47,7 +47,7 @@ pub fn detect(ctx: &Context) -> Status {
     services.push(("resolver".to_string(), resolver));
 
     for config in kaspad::active_configs(ctx) {
-        let service_name = config.service_name();
+        let service_name = service_name(config);
         let systemd_unit_enabled =
             systemd::is_enabled_resp(&service_name).unwrap_or("error".to_string());
         let systemd_unit_active =
@@ -60,7 +60,7 @@ pub fn detect(ctx: &Context) -> Status {
 
     let mut errors = vec![];
     for config in kaspad::active_configs(ctx) {
-        let service_name = config.service_name();
+        let service_name = service_name(config);
         let systemd_unit_enabled =
             systemd::is_enabled_resp(&service_name).unwrap_or("error".to_string());
         let systemd_unit_active =

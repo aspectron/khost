@@ -44,9 +44,3 @@ impl Display for Network {
         }
     }
 }
-
-impl Service for Network {
-    fn service_name(&self) -> String {
-        format!("kaspa-{}", self)
-    }
-}

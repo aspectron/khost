@@ -37,13 +37,10 @@ pub enum Error {
 
     #[error("Sudo password is not set")]
     Sudo,
-}
 
-// impl UserAbort for Error {
-//     fn is_user_abort(&self) -> bool {
-//         matches!(self, Error::Io(e) if e.kind() == std::io::ErrorKind::Interrupted)
-//     }
-// }
+    #[error("Invalid repository URL: {0}")]
+    Repository(String),
+}
 
 impl From<String> for Error {
     fn from(s: String) -> Self {

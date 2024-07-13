@@ -8,6 +8,10 @@ pub mod prelude {
 
 const NGINX_CONFIG_PATH: &str = "/etc/nginx/";
 
+pub fn nginx_service_detail() -> ServiceDetail {
+    ServiceDetail::new("NGINX HTTP proxy", "nginx")
+}
+
 pub struct Certs {
     pub key: String,
     pub crt: String,
@@ -191,7 +195,7 @@ pub fn install(_ctx: &Context) -> Result<()> {
 }
 
 pub fn reload() -> Result<()> {
-    step("Reloading Nginx...", || {
+    step("Reloading Nginx config...", || {
         sudo!("nginx", "-s", "reload").run()
     })
 }
@@ -214,23 +218,25 @@ where
 }
 
 pub fn create(config: Config) -> Result<()> {
-    let config_filename = config_filename(&config.service_name);
-    log::step(format!(
-        "Creating Nginx config file: '{}'",
-        config_filename.display()
-    ))?;
-    sudo::fs::write(config_filename, config.to_string())?;
-    Ok(())
+    step(
+        format!("Creating Nginx config for: '{}'", config.service_name),
+        || {
+            let config_filename = config_filename(&config.service_name);
+            sudo::fs::write(config_filename, config.to_string())?;
+            Ok(())
+        },
+    )
 }
 
 pub fn remove<S: Display>(service_name: S) -> Result<()> {
-    let config_filename = config_filename(service_name);
-    log::step(format!(
-        "Removing Nginx config file: '{}'",
-        config_filename.display()
-    ))?;
-    sudo::fs::remove_file(config_filename)?;
-    Ok(())
+    step(
+        format!("Removing Nginx config for: '{service_name}'"),
+        || {
+            let config_filename = config_filename(&service_name);
+            sudo::fs::remove_file(config_filename)?;
+            Ok(())
+        },
+    )
 }
 
 pub fn exists(service_name: &str) -> bool {
