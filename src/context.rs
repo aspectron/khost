@@ -6,7 +6,6 @@ pub struct Context {
     pub system: Arc<System>,
     pub username: String,
     pub config: Config,
-    pub terminal_width: usize,
 }
 
 impl Context {
@@ -23,22 +22,18 @@ impl Context {
             }
         };
 
-        let terminal_width = termion::terminal_size()
-            .map(|size| size.0 as usize)
-            .unwrap_or(80);
-
         Ok(Context {
             args,
             system,
             username,
             config,
-            terminal_width,
         })
     }
 
     pub fn terminal_width(&self) -> usize {
-        // self.terminal_size.map(|(w, _)| w).unwrap_or(80)
-        self.terminal_width
+        termion::terminal_size()
+            .map(|size| size.0 as usize)
+            .unwrap_or(80)
     }
 
     pub fn truncate<S>(&self, text: S) -> String
