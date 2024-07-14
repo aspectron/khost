@@ -54,7 +54,7 @@ fn main() {
             }
             Err(e) => {
                 log::error(e.to_string()).ok();
-                cliclack::outro("Exiting...").ok();
+                outro("Exiting...").ok();
                 std::process::exit(1);
             }
         }
@@ -62,7 +62,7 @@ fn main() {
 
     if runtime::is_windows() {
         let _ = log::error("kHOST supports Linux OS only");
-        let _ = cliclack::outro("Exiting...");
+        let _ = outro("Exiting...");
         println!();
         std::process::exit(1);
     }

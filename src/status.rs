@@ -136,7 +136,7 @@ pub fn conflicts(_ctx: &Context, _status: &Status) {
     }
 
     if abort {
-        cliclack::outro("Unable to continue until conflicts are resolved.").ok();
+        outro("Unable to continue until conflicts are resolved.").ok();
         println!();
         std::process::exit(1);
     }

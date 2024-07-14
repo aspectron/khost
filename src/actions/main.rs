@@ -32,7 +32,7 @@ impl Action for Main {
                 Ok(true)
             }
             Main::Exit => {
-                cliclack::outro("bye!")?;
+                outro("bye!")?;
                 println!();
                 std::process::exit(0);
             }

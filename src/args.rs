@@ -20,6 +20,7 @@ pub fn parse() -> Args {
     if args.reset {
         Config::reset();
         log::info("Configuration reset").ok();
+        outro("have a great day!").ok();
         std::process::exit(0);
     }
 
