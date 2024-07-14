@@ -53,16 +53,16 @@ pub fn clone<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
     Ok(())
 }
 
-pub fn pull<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
-    let path = path.as_ref().join(origin.folder()).display().to_string();
+pub fn pull<P: AsRef<Path>>(path: P, _origin: &Origin) -> Result<()> {
+    let path = path.as_ref().display().to_string();
 
     cmd("git", &["pull", &path]).dir(path).run()?;
 
     Ok(())
 }
 
-pub fn restore<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
-    let path = path.as_ref().join(origin.folder()).display().to_string();
+pub fn restore<P: AsRef<Path>>(path: P, _origin: &Origin) -> Result<()> {
+    let path = path.as_ref().display().to_string();
 
     cmd("git", &["restore", &path]).dir(path).run()?;
 

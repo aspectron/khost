@@ -146,8 +146,9 @@ pub fn inactive_configs(ctx: &Context) -> impl Iterator<Item = &Config> {
 pub fn fetch(ctx: &Context) -> Result<()> {
     for origin in unique_origins(ctx) {
         let path = folder(&origin);
-
+        println!("fetch path: {:?}", path);
         if path.exists() {
+            println!("path exists");
             git::restore(&path, &origin)?;
             git::pull(&path, &origin)?;
         } else {
