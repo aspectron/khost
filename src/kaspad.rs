@@ -146,9 +146,7 @@ pub fn inactive_configs(ctx: &Context) -> impl Iterator<Item = &Config> {
 pub fn fetch(ctx: &Context) -> Result<()> {
     for origin in unique_origins(ctx) {
         let path = folder(&origin);
-        println!("fetch path: {:?}", path);
         if path.exists() {
-            println!("path exists");
             git::restore(&path, &origin)?;
             git::pull(&path, &origin)?;
         } else {
@@ -273,18 +271,16 @@ pub fn build(ctx: &Context) -> Result<()> {
     rust::update()?;
 
     for origin in unique_origins(ctx) {
-        step("Building Kaspad p2p node...", || {
+        step(format!("Building Kaspad p2p node ({})", origin), || {
             cmd!("cargo", "build", "--release", "--bin", "kaspad")
                 .dir(folder(&origin))
                 .run()
         })?;
 
         if let Some(version) = version(&origin) {
-            log::success("Build successful")?;
-            log::info(format!("Kaspad version: {}", version))?;
-            // Ok(())
+            log::success(format!("Build successful for version {version}"))?;
         } else {
-            log::error("Unable to determine kaspad version")?;
+            log::error("Build error: unable to determine kaspad version")?;
         }
     }
 
@@ -304,14 +300,12 @@ pub fn base_folder() -> PathBuf {
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
-    println!("binary: {:?}", binary(origin));
-    let v = duct::cmd!(binary(origin), "--version").stderr_to_stdout().unchecked().read().ok();
-    println!("v: {:?}", v);
-    v.and_then(|s| s.trim().split(' ').last().map(String::from))
-    // duct::cmd!(binary(origin), "--version")
-    //     .read()
-    //     .ok()
-    //     .and_then(|s| s.trim().split(' ').last().map(String::from))
+    duct::cmd!(binary(origin), "--version")
+        .stderr_to_stdout()
+        .unchecked()
+        .read()
+        .ok()
+        .and_then(|s| s.trim().split(' ').last().map(String::from))
 }
 
 pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {

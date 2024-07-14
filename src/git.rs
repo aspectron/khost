@@ -6,6 +6,12 @@ pub struct Origin {
     branch: Option<String>,
 }
 
+impl Display for Origin {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{}", self.folder().display())
+    }
+}
+
 impl Origin {
     pub fn try_new(repo: &str, branch: Option<&str>) -> Result<Self> {
         let repository = repo.to_string();

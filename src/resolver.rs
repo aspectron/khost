@@ -202,17 +202,18 @@ pub fn build(origin: &Origin) -> Result<()> {
     })?;
 
     if let Some(version) = version(origin) {
-        log::success("Build successful")?;
-        log::info(format!("Resolver version: {}", version))?;
+        log::success(format!("Build successful for version {version}"))?;
         Ok(())
     } else {
-        log::error("Unable to determine resolver version")?;
+        log::error("Build error: unable to determine resolver version")?;
         Err(Error::custom("Failed to execute resolver"))
     }
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
-    cmd!(binary(origin), "--version")
+    duct::cmd!(binary(origin), "--version")
+        .stderr_to_stdout()
+        .unchecked()
         .read()
         .ok()
         .and_then(|s| s.trim().split(' ').last().map(String::from))
