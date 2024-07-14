@@ -167,6 +167,12 @@ pub fn install(ctx: &mut Context) -> Result<()> {
     Ok(())
 }
 
+pub fn is_installed(ctx: &Context) -> bool {
+    unique_origins(ctx)
+        .iter()
+        .all(|origin| binary(origin).exists())
+}
+
 pub fn nginx_config(_ctx: &Context, config: &Config) -> NginxConfig {
     let fqdns = fqdn::get(false);
     let server_kind = ServerKind::http().with_fqdn(fqdns);

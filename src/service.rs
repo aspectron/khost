@@ -38,6 +38,12 @@ impl Display for ServiceDetail {
     }
 }
 
+impl Service for ServiceDetail {
+    fn service_detail(&self) -> ServiceDetail {
+        self.clone()
+    }
+}
+
 pub trait Service {
     fn service_detail(&self) -> ServiceDetail;
 }

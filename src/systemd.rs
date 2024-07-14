@@ -110,6 +110,25 @@ pub fn is_enabled_resp<S: Display>(service_name: S) -> Result<String> {
         .map(|resp| resp.trim().to_string())
 }
 
+pub fn unit_state<S: Display>(service_name: S) -> std::result::Result<String, String> {
+    let enabled = sudo!("systemctl", "is-enabled", service_name.to_string())
+        .unchecked()
+        .read()
+        .map(|resp| resp.trim().to_string())
+        .map_err(|err| err.to_string())?;
+    let active = sudo!("systemctl", "is-active", service_name.to_string())
+        .unchecked()
+        .read()
+        .map(|resp| resp.trim().to_string())
+        .map_err(|err| err.to_string())?;
+
+    if enabled == "enabled" && active == "active" {
+        Ok("enabled+active".to_string())
+    } else {
+        Err(format!("{}+{}", enabled, active))
+    }
+}
+
 pub fn is_failed_resp<S: Display>(service_name: S) -> Result<String> {
     sudo!("systemctl", "is-failed", service_name.to_string())
         .unchecked()

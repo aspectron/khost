@@ -5,7 +5,7 @@ use crate::imports::*;
 pub enum Manage {
     #[describe("Back")]
     Back,
-    #[describe("Enable services")]
+    #[describe("Enable / Disable services")]
     Enable,
     #[describe("Kaspa p2p node status")]
     Kaspad,
@@ -13,10 +13,10 @@ pub enum Manage {
     Resolver,
     #[describe("Nginx status")]
     Nginx,
-    #[describe("Follow logs")]
-    FollowLogs,
-    #[describe("View logs")]
+    #[describe("View service logs")]
     ViewLogs,
+    #[describe("Follow service logs")]
+    FollowLogs,
 }
 
 impl Action for Manage {
@@ -65,14 +65,19 @@ impl Action for Manage {
                 Ok(true)
             }
             Manage::Kaspad => {
-                for config in kaspad::active_configs(ctx) {
-                    match kaspad::status(config) {
-                        Ok(status) => {
-                            println!("{}", truncate_to_terminal(status));
-                            println!();
-                        }
-                        Err(e) => {
-                            log::error(format!("Failed to get kaspad status: {}", e))?;
+                let active_configs = kaspad::active_configs(ctx).collect::<Vec<_>>();
+                if active_configs.is_empty() {
+                    log::warning("No active kaspad configurations found")?;
+                } else {
+                    for config in kaspad::active_configs(ctx) {
+                        match kaspad::status(config) {
+                            Ok(status) => {
+                                println!("{}", truncate_to_terminal(status));
+                                println!();
+                            }
+                            Err(e) => {
+                                log::error(format!("Failed to get kaspad status: {}", e))?;
+                            }
                         }
                     }
                 }
@@ -82,7 +87,7 @@ impl Action for Manage {
             Manage::Resolver => {
                 let config = &ctx.config.resolver;
                 if !config.enabled() {
-                    log::error("Resolver is not enabled")?;
+                    log::warning("Resolver is not enabled")?;
                 } else {
                     let status = resolver::status(config)?;
                     println!("{}", truncate_to_terminal(status));

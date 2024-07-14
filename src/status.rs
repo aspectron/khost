@@ -1,11 +1,14 @@
 use crate::imports::*;
 use crate::system::System;
 
+type ServiceStateVec = Vec<(ServiceDetail, std::result::Result<String, String>)>;
+
 pub struct Status {
     pub ip: Option<String>,
     pub system: Arc<System>,
-    pub services: Vec<(String, String)>,
-    pub errors: Vec<(String, String)>,
+    // pub services: Vec<(String, String)>,
+    // pub errors: Vec<(String, String)>,
+    pub services: ServiceStateVec,
 }
 
 impl Display for Status {
@@ -14,22 +17,21 @@ impl Display for Status {
         rows.push(Content::separator());
         rows.push(Content::field(
             "Public IP:",
-            self.ip.as_deref().unwrap_or("N/A"),
+            self.ip
+                .as_deref()
+                .map(|ip| style(ip).cyan())
+                .unwrap_or(style("N/A").red()),
         ));
         rows.push(Content::separator());
-        for (service, status) in &self.services {
-            rows.push(Content::field(service, status));
-        }
-
-        if !self.errors.is_empty() {
-            rows.push(Content::separator());
-            for (service, status) in &self.errors {
-                rows.push(Content::field(
-                    ::console::style(service).red(),
-                    ::console::style(status).red(),
-                ));
-            }
-        }
+        rows.extend(
+            self.services
+                .iter()
+                .map(|(service, status)| match status {
+                    Ok(status) => Content::field(service, style(status).green()),
+                    Err(status) => Content::field(service, style(status).red()),
+                })
+                .collect::<Vec<_>>(),
+        );
 
         writeln!(f, "{}", content(rows))?;
         Ok(())
@@ -40,44 +42,20 @@ pub fn detect(ctx: &Context) -> Status {
     let ip = ip::blocking::public().ok();
     let system = ctx.system.clone();
 
-    let mut services = vec![];
-    let nginx = systemd::is_enabled_resp("nginx").unwrap_or("error".to_string());
-    services.push(("nginx".to_string(), nginx));
-    let resolver = systemd::is_enabled_resp(resolver::SERVICE_NAME).unwrap_or("error".to_string());
-    services.push(("resolver".to_string(), resolver));
-
-    for config in kaspad::active_configs(ctx) {
-        let service_name = service_name(config);
-        let systemd_unit_enabled =
-            systemd::is_enabled_resp(&service_name).unwrap_or("error".to_string());
-        let systemd_unit_active =
-            systemd::is_active_resp(&service_name).unwrap_or("error".to_string());
-        services.push((
-            service_name,
-            format!("{systemd_unit_enabled}+{systemd_unit_active}"),
-        ));
-    }
-
-    let mut errors = vec![];
-    for config in kaspad::active_configs(ctx) {
-        let service_name = service_name(config);
-        let systemd_unit_enabled =
-            systemd::is_enabled_resp(&service_name).unwrap_or("error".to_string());
-        let systemd_unit_active =
-            systemd::is_active_resp(&service_name).unwrap_or("error".to_string());
-        if systemd_unit_active == "active" {
-            errors.push((
-                service_name,
-                format!("{systemd_unit_enabled}+{systemd_unit_active}"),
-            ));
-        }
-    }
+    let services = ctx
+        .active_services()
+        .into_iter()
+        .map(|service| {
+            let status = systemd::unit_state(service_name(&service));
+            (service, status)
+        })
+        .collect();
 
     Status {
         ip,
         system,
         services,
-        errors,
+        // errors,
     }
 }
 
