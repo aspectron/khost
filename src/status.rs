@@ -19,16 +19,16 @@ impl Display for Status {
             "Public IP:",
             self.ip
                 .as_deref()
-                .map(|ip| style(ip).cyan())
-                .unwrap_or(style("N/A").red()),
+                .map(|ip| style(ip).cyan().bold())
+                .unwrap_or(style("N/A").red().bold()),
         ));
         rows.push(Content::separator());
         rows.extend(
             self.services
                 .iter()
                 .map(|(service, status)| match status {
-                    Ok(status) => Content::field(service, style(status).green().bright()),
-                    Err(status) => Content::field(service, style(status).red().bright()),
+                    Ok(status) => Content::field(service, style(status).green().bold()),
+                    Err(status) => Content::field(service, style(status).red().bold()),
                 })
                 .collect::<Vec<_>>(),
         );
