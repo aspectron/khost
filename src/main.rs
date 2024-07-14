@@ -35,6 +35,8 @@ use crate::imports::*;
 fn main() {
     println!();
 
+    init_theme();
+
     let args = args::parse();
 
     loop {

@@ -17,7 +17,9 @@ pub fn init_user_interaction() {
         SIGTERM.store(true, Ordering::Relaxed);
     })
     .expect("setting Ctrl-C handler");
+}
 
+pub fn init_theme() {
     cliclack::set_theme(ActionTheme);
 }
 
@@ -134,6 +136,14 @@ impl Theme for ActionTheme {
             })
         )
         // }
+    }
+
+    fn input_style(&self, state: &ThemeState) -> Style {
+        match state {
+            ThemeState::Cancel => Style::new().dim().strikethrough(),
+            ThemeState::Submit => Style::new().bright(),
+            _ => Style::new(),
+        }
     }
 }
 
