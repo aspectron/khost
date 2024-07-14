@@ -143,9 +143,7 @@ pub fn reload<S: Display>(service_name: S) -> Result<()> {
 }
 
 pub fn daemon_reload() -> Result<()> {
-    step("Reloading systemd daemons...", || {
-        sudo!("systemctl", "daemon-reload").run()
-    })
+    sudo!("systemctl", "daemon-reload").run()
 }
 
 pub fn exists(service_name: &str) -> bool {

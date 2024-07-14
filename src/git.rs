@@ -99,14 +99,17 @@ pub fn reset<P: AsRef<Path>>(path: P) -> Result<()> {
 pub fn hash<P: AsRef<Path>>(path: P, short: bool) -> Result<String> {
     let path = path.as_ref().display().to_string();
 
-    let args = if short {
-        vec!["rev-parse", "--short", "HEAD"]
+    let hash = duct::cmd("git", &["rev-parse", "HEAD"]).dir(path).read()?;
+    let hash = hash.trim();
+    if short {
+        if hash.len() < 7 {
+            Err(Error::Hash(hash.to_string()))
+        } else {
+            Ok(hash[0..7].to_string())
+        }
     } else {
-        vec!["rev-parse", "HEAD"]
-    };
-
-    let hash = duct::cmd("git", args).dir(path).read()?;
-    Ok(hash.trim().to_string())
+        Ok(hash.trim().to_string())
+    }
 }
 
 #[derive(Deserialize)]

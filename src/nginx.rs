@@ -195,7 +195,7 @@ pub fn install(_ctx: &Context) -> Result<()> {
 }
 
 pub fn reload() -> Result<()> {
-    step("Reloading Nginx config...", || {
+    step("Reloading Nginx configuration...", || {
         sudo!("nginx", "-s", "reload").run()
     })
 }
@@ -218,14 +218,9 @@ where
 }
 
 pub fn create(config: Config) -> Result<()> {
-    step(
-        format!("Creating Nginx config for: '{}'", config.service_name),
-        || {
-            let config_filename = config_filename(&config.service_name);
-            sudo::fs::write(config_filename, config.to_string())?;
-            Ok(())
-        },
-    )
+    let config_filename = config_filename(&config.service_name);
+    sudo::fs::write(config_filename, config.to_string())?;
+    Ok(())
 }
 
 pub fn remove<S: Display>(service_name: S) -> Result<()> {

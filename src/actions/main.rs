@@ -4,6 +4,7 @@ use actions::*;
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Main menu"]
 pub enum Main {
+    /// Configure services
     #[describe("Manage")]
     Manage,
     /// Software updates

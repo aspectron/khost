@@ -40,6 +40,9 @@ pub enum Error {
 
     #[error("Invalid repository URL: {0}")]
     Repository(String),
+
+    #[error("Hash {0}")]
+    Hash(String),
 }
 
 impl From<String> for Error {

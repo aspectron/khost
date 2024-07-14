@@ -451,6 +451,8 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
         nginx::reload()?;
     }
 
+    log::success("Configuration updated")?;
+
     Ok(())
 }
 
