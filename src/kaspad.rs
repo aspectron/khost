@@ -303,10 +303,14 @@ pub fn base_folder() -> PathBuf {
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
-    duct::cmd!(binary(origin), "--version")
-        .read()
-        .ok()
-        .and_then(|s| s.trim().split(' ').last().map(String::from))
+    println!("binary: {:?}", binary(origin));
+    let v = duct::cmd!(binary(origin), "--version").read().ok();
+    println!("v: {:?}", v);
+    v.and_then(|s| s.trim().split(' ').last().map(String::from))
+    // duct::cmd!(binary(origin), "--version")
+    //     .read()
+    //     .ok()
+    //     .and_then(|s| s.trim().split(' ').last().map(String::from))
 }
 
 pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {

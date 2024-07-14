@@ -21,6 +21,7 @@ pub fn parse() -> Args {
         Config::reset();
         log::info("Configuration reset").ok();
         outro("have a great day!").ok();
+        println!();
         std::process::exit(0);
     }
 

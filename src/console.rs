@@ -1,7 +1,7 @@
 use crate::imports::*;
 pub use ::console::style;
 use ::console::{Emoji, Style};
-pub use cliclack::{confirm,outro};
+pub use cliclack::{confirm, outro};
 use cliclack::{Theme, ThemeState};
 use std::cell::RefCell;
 use std::sync::atomic::{AtomicBool, Ordering};
