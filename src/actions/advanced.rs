@@ -3,7 +3,6 @@ use crate::imports::*;
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Advanced menu"]
 pub enum Advanced {
-    /// Go back to the previous menu
     #[describe("Back")]
     Back,
     #[describe("Rebuild configuration")]
@@ -33,7 +32,6 @@ impl Action for Advanced {
                         println!("Folder exists: {:?}", data_folder.display());
                         let info = cmd!("du", "-h", "-s", &data_folder).read()?;
                         folders.insert(info, (config.network(), data_folder));
-                        // folders.push((config.network(),data_folder,info));
                     } else {
                         println!("Folder does not exist: {:?}", data_folder.display());
                     }
@@ -48,7 +46,6 @@ impl Action for Advanced {
                 for item in list.iter() {
                     selector = selector.item(item, item, "");
                 }
-                // list.iter().for_each(|x| {selector = selector.item(x,x,"");});
                 let selection = selector.interact().ok();
                 if let Some(selection) = selection {
                     let targets = selection
@@ -58,15 +55,6 @@ impl Action for Advanced {
                     println!("Selected folders: {:?}", targets);
                 }
                 Ok(true)
-
-                // if confirm("Are you sure you want to delete the Kaspa Data folder?").interact()? {
-                //     kaspad::stop_all(ctx)?;
-                //     kaspad::purge_data_folder_all(ctx)?;
-                //     // log::step("Deleting Kaspa Data folder")?;
-                //     // resolver::purge_data()?;
-                //     // kaspad::purge_data(ctx)?;
-                //     // log::success("Kaspa Data folder deleted successfully")?;
-                // }
             }
             Advanced::Full => {
                 actions::Bootstrap::select(ctx)?;

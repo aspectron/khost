@@ -1,4 +1,4 @@
-use crate::imports::*;
+// use crate::imports::*;
 
 mod bootstrap;
 pub use bootstrap::*;
@@ -6,19 +6,8 @@ mod main;
 pub use main::*;
 mod advanced;
 pub use advanced::*;
-mod configure;
-pub use configure::*;
-mod status;
-pub use status::*;
+mod manage;
+pub use manage::*;
 mod update;
 pub use update::*;
 
-#[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
-pub enum Services {
-    #[describe("Kaspa p2p Node")]
-    Kaspad,
-    #[describe("Resolver (wRPC load balancer)")]
-    Resolver,
-    #[describe("Nginx (HTTP proxy)")]
-    Nginx,
-}

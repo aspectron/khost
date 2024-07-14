@@ -4,15 +4,8 @@ use actions::*;
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Main menu"]
 pub enum Main {
-    /// Configure services
-    #[describe("Configure")]
-    Configure,
-    /// Display service status
-    #[describe("Status")]
-    Status,
-    /// Enable or disable services
-    #[describe("Control")]
-    Control,
+    #[describe("Manage")]
+    Manage,
     /// Software updates
     #[describe("Updates")]
     Update,
@@ -26,16 +19,8 @@ pub enum Main {
 impl Action for Main {
     fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
-            Main::Status => {
-                Status::select(ctx)?;
-                Ok(true)
-            }
-            Main::Configure => {
-                Configure::select(ctx)?;
-                Ok(true)
-            }
-            Main::Control => {
-                // TODO - multi-select service to enable/disable
+            Main::Manage => {
+                Manage::select(ctx)?;
                 Ok(true)
             }
             Main::Update => {
