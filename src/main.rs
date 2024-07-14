@@ -90,7 +90,9 @@ fn main() {
         }
     }
 
-    actions::Main::run(&mut ctx).ok();
+    if let Err(err) = actions::Main::run(&mut ctx) {
+        log::error(err).ok();
+    }
 
     println!();
 }
