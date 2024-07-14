@@ -35,6 +35,8 @@ use crate::imports::*;
 fn main() {
     println!();
 
+    let args = args::parse();
+
     loop {
         match cliclack::password("Enter user password:").interact() {
             Ok(password) => {
@@ -57,8 +59,6 @@ fn main() {
             }
         }
     }
-
-    let args = args::parse();
 
     if runtime::is_windows() {
         let _ = log::error("kHOST supports Linux OS only");

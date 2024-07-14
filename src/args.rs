@@ -19,6 +19,8 @@ pub fn parse() -> Args {
 
     if args.reset {
         Config::reset();
+        log::info("Configuration reset").ok();
+        std::process::exit(0);
     }
 
     args
