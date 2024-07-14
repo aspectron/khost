@@ -61,7 +61,8 @@ impl Action for Status {
                 Ok(true)
             }
             Status::Resolver => {
-                let status = resolver::status()?;
+                let config = &ctx.config.resolver;
+                let status = resolver::status(config)?;
                 println!("{}", truncate_to_terminal(status));
                 println!();
                 Ok(true)

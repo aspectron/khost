@@ -30,34 +30,60 @@ impl Context {
         })
     }
 
-    pub fn active_services(&self) -> Vec<ServiceDetail> {
-        let mut services = kaspad::active_configs(self)
+    pub fn services(&self) -> Vec<ServiceDetail> {
+        let mut services = self
+            .config
+            .kaspad
+            .iter()
             .map(|config| config.service_detail())
             .collect::<Vec<_>>();
+        services.push(self.config.resolver.service_detail());
+        services.push(nginx::nginx_service_detail());
+        services
+    }
 
-        if self.config.resolver.enabled {
-            services.push(self.config.resolver.service_detail());
+    pub fn active_services(&self) -> Vec<ServiceDetail> {
+        self.services()
+            .iter()
+            .filter(|service| service.enabled)
+            .cloned()
+            .collect::<Vec<_>>()
+    }
+
+    pub fn managed_services(&self) -> Vec<ServiceDetail> {
+        self.services()
+            .iter()
+            .filter(|service| service.managed)
+            .cloned()
+            .collect::<Vec<_>>()
+    }
+
+    pub fn managed_active_services(&self) -> Vec<ServiceDetail> {
+        self.services()
+            .iter()
+            .filter(|service| service.enabled && service.managed)
+            .cloned()
+            .collect::<Vec<_>>()
+    }
+
+    pub fn select_service<C>(&self, caption: C) -> Result<ServiceDetail>
+    where
+        C: Display,
+    {
+        let services = self.services();
+        let mut selector = cliclack::select(caption.to_string());
+        for service in services {
+            selector = selector.item(service.clone(), service, "");
         }
 
-        services.push(nginx::nginx_service_detail());
-
-        services
+        Ok(selector.interact()?)
     }
 
     pub fn select_active_service<C>(&self, caption: C) -> Result<ServiceDetail>
     where
         C: Display,
     {
-        let mut services = kaspad::active_configs(self)
-            .map(|config| config.service_detail())
-            .collect::<Vec<_>>();
-
-        if self.config.resolver.enabled {
-            services.push(self.config.resolver.service_detail());
-        }
-
-        services.push(nginx::nginx_service_detail());
-
+        let services = self.active_services();
         let mut selector = cliclack::select(caption.to_string());
         for service in services {
             selector = selector.item(service.clone(), service, "");

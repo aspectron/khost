@@ -8,17 +8,11 @@ pub enum Configure {
     Back,
     // #[describe("Fail")]
     // Fail,
-    // #[describe("Domain names")]
-    // Domains,
-    // / The heart of the Kaspa network
     // #[describe("Verbose mode")]
     // Verbose,
-    /// Enable or disable Kaspa networks
-    #[describe("Configure Kaspa networks")]
-    Networks,
-    /// wRPC load balancer
-    #[describe("Resolver (TODO)")]
-    Resolver,
+    /// Enable or disable services
+    #[describe("Enable services")]
+    Enable,
 }
 
 impl Action for Configure {
@@ -34,28 +28,23 @@ impl Action for Configure {
             //         ctx.config.save()?;
             //     }
             // }
-            Configure::Networks => {
-                let active = kaspad::active_configs(ctx)
-                    .map(|config| config.network())
-                    .collect::<Vec<_>>();
+            Configure::Enable => {
+                let services = ctx.managed_services();
+                let active = ctx.managed_active_services();
                 let mut selector =
-                    cliclack::multiselect("Select Kaspa networks to enable (ESC to cancel)")
+                    cliclack::multiselect("Select services to enable (ESC to cancel)")
                         .initial_values(active);
-                for item in Network::into_iter() {
-                    selector = selector.item(item, item, "");
+                for service in services {
+                    selector = selector.item(service.clone(), service, "");
                 }
                 match selector.interact() {
-                    Ok(networks) => {
-                        kaspad::configure_networks(ctx, networks)?;
+                    Ok(services) => {
+                        enable_services(ctx, services)?;
                     }
                     Err(_) => {
                         println!();
                     }
                 }
-                Ok(true)
-            }
-            Configure::Resolver => {
-                log::info("Resolver configuration not implemented")?;
                 Ok(true)
             }
         }

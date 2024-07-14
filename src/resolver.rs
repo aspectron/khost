@@ -15,7 +15,13 @@ pub struct Config {
 
 impl Service for Config {
     fn service_detail(&self) -> ServiceDetail {
-        ServiceDetail::new("Kaspa RPC resolver", SERVICE_NAME)
+        ServiceDetail::new(
+            "Kaspa RPC resolver",
+            SERVICE_NAME,
+            ServiceKind::Resolver,
+            self.enabled,
+            true,
+        )
     }
 }
 
@@ -49,6 +55,10 @@ impl Config {
             http: Some(Interface::Local(port)),
             ..self
         }
+    }
+
+    pub fn enabled(&self) -> bool {
+        self.enabled
     }
 }
 
@@ -97,6 +107,11 @@ pub fn base_folder() -> PathBuf {
     root_folder().join("kaspa-resolver")
 }
 
+pub fn is_installed(ctx: &Context) -> bool {
+    let origin = &ctx.config.resolver.origin;
+    folder(origin).exists() && binary(&ctx.config.resolver.origin).exists()
+}
+
 pub fn install(ctx: &mut Context) -> Result<()> {
     if !ctx.config.resolver.enabled {
         return Ok(());
@@ -111,8 +126,8 @@ pub fn install(ctx: &mut Context) -> Result<()> {
 
     create_systemd_unit(ctx, config)?;
     systemd::daemon_reload()?;
-    systemd::enable(SERVICE_NAME)?;
-    systemd::start(SERVICE_NAME)?;
+    systemd::enable(service_name(config))?;
+    systemd::start(service_name(config))?;
 
     nginx::create(nginx_config(ctx))?;
     nginx::reload()?;
@@ -120,12 +135,13 @@ pub fn install(ctx: &mut Context) -> Result<()> {
     Ok(())
 }
 
-pub fn nginx_config(_ctx: &Context) -> NginxConfig {
+pub fn nginx_config(ctx: &Context) -> NginxConfig {
+    let config = &ctx.config.resolver;
     let fqdns = fqdn::get(false);
     let server_kind = ServerKind::http().with_fqdn(fqdns);
     let proxy_kind = ProxyKind::http(8989);
     let proxy_config = ProxyConfig::new("/", proxy_kind);
-    NginxConfig::new(SERVICE_NAME, server_kind, vec![proxy_config])
+    NginxConfig::new(service_name(config), server_kind, vec![proxy_config])
 }
 
 pub fn update(ctx: &Context) -> Result<()> {
@@ -137,26 +153,31 @@ pub fn update(ctx: &Context) -> Result<()> {
 
     fetch(&config.origin)?;
     build(&config.origin)?;
-    restart()?;
+    restart(config)?;
     Ok(())
 }
 
-pub fn uninstall() -> Result<()> {
+pub fn uninstall(ctx: &mut Context) -> Result<()> {
+    let config = &mut ctx.config.resolver;
+    config.enabled = false;
+
     log::remark("Uninstalling resolver...")?;
 
-    if nginx::exists(SERVICE_NAME) {
-        nginx::remove(SERVICE_NAME)?;
+    let service_name = service_name(config);
+
+    if nginx::exists(&service_name) {
+        nginx::remove(&service_name)?;
         nginx::reload()?;
     } else {
-        log::error(format!("Nginx config file '{SERVICE_NAME}' not found"))?;
+        log::error(format!("Nginx config file '{service_name}' not found"))?;
     }
 
-    if systemd::exists(SERVICE_NAME) {
-        systemd::stop(SERVICE_NAME)?;
-        systemd::disable(SERVICE_NAME)?;
-        systemd::remove(SERVICE_NAME)?;
+    if systemd::exists(&service_name) {
+        systemd::stop(&service_name)?;
+        systemd::disable(&service_name)?;
+        systemd::remove(&service_name)?;
     } else {
-        log::error(format!("Systemd unit file '{SERVICE_NAME}' not found"))?;
+        log::error(format!("Systemd unit file '{service_name}' not found"))?;
     }
 
     let path = base_folder();
@@ -204,37 +225,25 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
         .chain(args)
         .collect::<Vec<_>>();
 
-    let unit_config =
-        systemd::Config::new(SERVICE_NAME, "Kaspa Resolver", &ctx.username, exec_start, 5);
+    let unit_config = systemd::Config::new(
+        service_name(config),
+        "Kaspa Resolver",
+        &ctx.username,
+        exec_start,
+        5,
+    );
 
     systemd::create(unit_config)?;
 
     Ok(())
 }
 
-pub fn start() -> Result<()> {
-    systemd::start(SERVICE_NAME)?;
-    Ok(())
+pub fn restart(config: &Config) -> Result<()> {
+    step("Restarting resolver...", || {
+        systemd::restart(service_name(config))
+    })
 }
 
-pub fn stop() -> Result<()> {
-    systemd::stop(SERVICE_NAME)?;
-    Ok(())
-}
-
-pub fn restart() -> Result<()> {
-    log::info("Restarting resolver...")?;
-    systemd::restart(SERVICE_NAME)
-}
-
-pub fn status() -> Result<String> {
-    systemd::status(SERVICE_NAME)
-}
-
-pub fn is_active() -> Result<bool> {
-    systemd::is_active(SERVICE_NAME)
-}
-
-pub fn is_enabled() -> Result<bool> {
-    systemd::is_enabled(SERVICE_NAME)
+pub fn status(config: &Config) -> Result<String> {
+    systemd::status(service_name(config))
 }

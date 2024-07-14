@@ -9,7 +9,7 @@ pub mod prelude {
 const NGINX_CONFIG_PATH: &str = "/etc/nginx/";
 
 pub fn nginx_service_detail() -> ServiceDetail {
-    ServiceDetail::new("NGINX HTTP proxy", "nginx")
+    ServiceDetail::new("NGINX HTTP proxy", "nginx", ServiceKind::Nginx, true, false)
 }
 
 pub struct Certs {
@@ -239,6 +239,9 @@ pub fn remove<S: Display>(service_name: S) -> Result<()> {
     )
 }
 
-pub fn exists(service_name: &str) -> bool {
+pub fn exists<S>(service_name: S) -> bool
+where
+    S: Display,
+{
     config_filename(service_name).exists()
 }

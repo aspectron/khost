@@ -16,7 +16,13 @@ pub struct Config {
 
 impl Service for Config {
     fn service_detail(&self) -> ServiceDetail {
-        ServiceDetail::new("Kaspa p2p node", format!("kaspa-{}", self.network))
+        ServiceDetail::new(
+            "Kaspa p2p node",
+            format!("kaspa-{}", self.network),
+            ServiceKind::Kaspad(self.network),
+            self.enabled,
+            true,
+        )
     }
 }
 

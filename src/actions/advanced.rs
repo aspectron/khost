@@ -75,7 +75,7 @@ impl Action for Advanced {
             Advanced::Uninstall => {
                 if confirm("Are you sure you want to uninstall Kaspa software?").interact()? {
                     log::step("Uninstalling Kaspa software")?;
-                    resolver::uninstall()?;
+                    resolver::uninstall(ctx)?;
                     kaspad::uninstall(ctx)?;
                     log::success("Kaspa software uninstalled successfully")?;
                 }
