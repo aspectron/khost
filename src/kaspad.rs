@@ -208,9 +208,13 @@ pub fn nginx_config(_ctx: &Context, config: &Config) -> NginxConfig {
 pub fn update(ctx: &Context) -> Result<()> {
     fetch(ctx)?;
     build(ctx)?;
-    for config in active_configs(ctx) {
-        restart(config)?;
-    }
+    step("Restarting Kaspa p2p nodes...", || {
+        for config in active_configs(ctx) {
+            restart(config)?;
+        }
+        Ok(())
+    })?;
+    log::success("Update successful");
     Ok(())
 }
 
