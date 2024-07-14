@@ -13,7 +13,7 @@ pub enum Main {
     /// Enable or disable services
     #[describe("Control")]
     Control,
-    /// Update services to the latest version
+    /// Software updates
     #[describe("Updates")]
     Update,
     /// Uninstall services, delete data, etc.

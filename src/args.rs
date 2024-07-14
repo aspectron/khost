@@ -1,3 +1,4 @@
+use crate::imports::*;
 pub use clap::Parser;
 
 #[derive(Default, Parser, Debug)]
@@ -6,12 +7,19 @@ pub struct Args {
     /// Verbose mode
     #[arg(short, long, default_value = "false")]
     pub verbose: bool,
+    /// Reset configuration
+    #[arg(short, long, default_value = "false")]
+    pub reset: bool,
 }
 
 pub fn parse() -> Args {
     let args = Args::parse();
 
     crate::cmd::init_verbose_mode(args.verbose);
+
+    if args.reset {
+        Config::reset();
+    }
 
     args
 }

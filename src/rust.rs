@@ -9,6 +9,7 @@ pub fn update() -> Result<()> {
             Ok(())
         })?;
     }
+
     Ok(())
 }
 

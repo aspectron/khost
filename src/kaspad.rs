@@ -8,10 +8,14 @@ pub struct Config {
     network: Network,
     data_folder: Option<PathBuf>,
     enable_upnp: bool,
+    outgoing_peers: Option<u16>,
+    max_incoming_peers: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
     grpc: Option<Interface>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    wrpc: Option<Interface>,
+    wrpc_borsh: Option<Interface>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    wrpc_json: Option<Interface>,
 }
 
 impl Service for Config {
@@ -28,10 +32,10 @@ impl Service for Config {
 
 impl Config {
     pub fn new(origin: Origin, network: Network) -> Self {
-        let (grpc, wrpc) = match network {
-            Network::Mainnet => (16110, 17110),
-            Network::Testnet10 => (16210, 17210),
-            Network::Testnet11 => (16310, 17310),
+        let (grpc, wrpc_borsh, wrpc_json) = match network {
+            Network::Mainnet => (16110, 17110, 18110),
+            Network::Testnet10 => (16210, 17210, 18210),
+            Network::Testnet11 => (16310, 17310, 18310),
         };
 
         Self {
@@ -40,8 +44,11 @@ impl Config {
             network,
             data_folder: None,
             enable_upnp: false,
+            outgoing_peers: Some(32),
+            max_incoming_peers: Some(1024),
             grpc: Some(Interface::Local(grpc)),
-            wrpc: Some(Interface::Local(wrpc)),
+            wrpc_borsh: Some(Interface::Local(wrpc_borsh)),
+            wrpc_json: Some(Interface::Local(wrpc_json)),
         }
     }
 
@@ -76,35 +83,34 @@ impl From<&Config> for Vec<String> {
             }
         }
 
+        args.push("--yes");
         args.push("--perf-metrics");
         args.push("--perf-metrics-interval-sec=1");
-        args.push("--yes");
         args.push("--utxoindex");
+        args.push("--loglevel=info,kaspad_lib::daemon=trace ");
 
         if !config.enable_upnp {
             args.push("--disable-upnp");
         }
 
-        match config.grpc {
-            Some(Interface::Public(port)) => {
-                args.push(format!("--rpclisten=0.0.0.0:{port}"));
-            }
-            Some(Interface::Local(port)) => {
-                args.push(format!("--rpclisten=127.0.0.1:{port}"));
-            }
-            None => {
-                args.push("--nogrpc");
-            }
+        if let Some(outgoing_peers) = config.outgoing_peers {
+            args.push(format!("--outpeers={outgoing_peers}"));
         }
 
-        match config.wrpc {
-            Some(Interface::Public(port)) => {
-                args.push(format!("--rpclisten-borsh=0.0.0.0:{port}"));
-            }
-            Some(Interface::Local(port)) => {
-                args.push(format!("--rpclisten-borsh=127.0.0.1:{port}"));
-            }
-            None => {}
+        if let Some(max_incoming_peers) = config.max_incoming_peers {
+            args.push(format!("--maxinpeers={max_incoming_peers}"));
+        }
+
+        if let Some(interface) = &config.grpc {
+            args.push(format!("--rpclisten={interface}"));
+        }
+
+        if let Some(interface) = &config.wrpc_borsh {
+            args.push(format!("--rpclisten-borsh={interface}"));
+        }
+
+        if let Some(interface) = &config.wrpc_json {
+            args.push(format!("--rpclisten-json={interface}"));
         }
 
         if let Some(data_folder) = &config.data_folder {
@@ -164,14 +170,24 @@ pub fn install(ctx: &mut Context) -> Result<()> {
 pub fn nginx_config(_ctx: &Context, config: &Config) -> NginxConfig {
     let fqdns = fqdn::get(false);
     let server_kind = ServerKind::http().with_fqdn(fqdns);
-    let port = config
-        .wrpc
-        .as_ref()
-        .expect("expecting Kaspad wRPC interface")
-        .port();
-    let proxy_kind = ProxyKind::wrpc(port);
-    let proxy_config = ProxyConfig::new(format!("/{}", config.network), proxy_kind);
-    NginxConfig::new(service_name(config), server_kind, vec![proxy_config])
+
+    let mut proxy_configs = Vec::new();
+
+    if let Some(iface) = config.wrpc_borsh.as_ref() {
+        let port = iface.port();
+        let proxy_kind = ProxyKind::wrpc(port);
+        let proxy_config = ProxyConfig::new(format!("/{}/wrpc/borsh", config.network), proxy_kind);
+        proxy_configs.push(proxy_config);
+    }
+
+    if let Some(iface) = config.wrpc_json.as_ref() {
+        let port = iface.port();
+        let proxy_kind = ProxyKind::wrpc(port);
+        let proxy_config = ProxyConfig::new(format!("/{}/wrpc/json", config.network), proxy_kind);
+        proxy_configs.push(proxy_config);
+    }
+
+    NginxConfig::new(service_name(config), server_kind, proxy_configs)
 }
 
 pub fn update(ctx: &Context) -> Result<()> {

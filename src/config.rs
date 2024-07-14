@@ -48,6 +48,16 @@ impl Config {
         fs::write(config_path, serde_json::to_string_pretty(&self)?)?;
         Ok(())
     }
+
+    pub fn reset() {
+        let path = data_folder().join("config.json");
+        if let Err(err) = fs::remove_file(&path) {
+            let _ = log::error(format!(
+                "Failed to reset config file: {}\n{err}",
+                path.display()
+            ));
+        }
+    }
 }
 
 pub fn fqdn<S: Display>(prompt: S) -> Result<String> {

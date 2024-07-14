@@ -1,24 +1,22 @@
-// use duct::*;
-use crate::result::Result;
-use std::ffi::OsString;
-use std::path::PathBuf;
-use std::sync::OnceLock;
+use crate::imports::*;
 
-static VERBOSE: OnceLock<bool> = OnceLock::new();
+lazy_static::lazy_static! {
+    pub static ref VERBOSE: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
+}
 
 #[inline]
 pub fn init_verbose_mode(verbose: bool) {
-    VERBOSE.set(verbose).unwrap();
+    VERBOSE.store(verbose, Ordering::Relaxed)
 }
 
 #[inline]
 pub fn verbose() -> bool {
-    *VERBOSE.get().expect("verbose mode is not initialized")
+    VERBOSE.load(Ordering::Relaxed)
 }
 
 #[inline]
 pub fn not_verbose() -> bool {
-    !*VERBOSE.get().expect("verbose mode is not initialized")
+    !verbose()
 }
 
 pub mod macros {
@@ -34,22 +32,7 @@ pub mod macros {
         };
     }
 
-    // #[macro_export]
-    // macro_rules! sudo {
-    //     ( $program:expr $(, $arg:expr )* $(,)? ) => {
-    //         {
-    //             // use duct::Expression;
-    //             use std::ffi::OsString;
-    //             let args: std::vec::Vec<OsString> = std::vec!["-kS".into(),$program.into(),$( Into::<OsString>::into($arg) ),*];
-
-    //             let password = $crate::cmd::password().expect("missing user password") + "\n";
-    //             $crate::cmd::cmd("sudo", args).stdin_bytes(password.as_bytes())
-    //         }
-    //     };
-    // }
-
     pub use cmd;
-    // pub use sudo;
 }
 
 pub struct Expression(duct::Expression);

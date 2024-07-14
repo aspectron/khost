@@ -28,7 +28,6 @@ pub mod cmd;
 pub use cmd::*;
 #[macro_use]
 pub mod sudo;
-// pub use sudo::sudo;
 
 use crate::imports::*;
 
@@ -59,15 +58,6 @@ fn main() {
         }
     }
 
-    // if !is_root() {
-    //     cliclack::note(
-    //         format!("kHOST v{}", khost::VERSION),
-    //         "kHOST requires root privileges\nPlease run `sudo khost`",
-    //     )
-    //     .ok();
-    //     std::process::exit(1);
-    // }
-
     let args = args::parse();
 
     if runtime::is_windows() {
@@ -84,18 +74,12 @@ fn main() {
 
     let first_run = !ctx.config.bootstrap;
     // let first_run = true;
-
     // bootstrap::check(&mut ctx);
 
     let status = status::detect(&ctx);
     let _ = cliclack::note(format!("kHOST v{}", khost::VERSION), &status);
 
     status::conflicts(&ctx, &status);
-    // if let Some(conflicts) = status::conflicts(&ctx, &status) {
-    //     conflicts.iter().for_each(|c| {
-    //         let _ = log::error(c);
-    //     });
-    // }
 
     init_user_interaction();
 
