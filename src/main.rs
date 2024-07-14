@@ -91,7 +91,7 @@ fn main() {
     }
 
     if let Err(err) = actions::Main::run(&mut ctx) {
-        log::error(err).ok();
+        outro(style(err.to_string()).red().bright()).ok();
     }
 
     println!();

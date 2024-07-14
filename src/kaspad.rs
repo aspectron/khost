@@ -305,7 +305,7 @@ pub fn base_folder() -> PathBuf {
 
 pub fn version(origin: &Origin) -> Option<String> {
     println!("binary: {:?}", binary(origin));
-    let v = duct::cmd!(binary(origin), "--version").read().ok();
+    let v = duct::cmd!(binary(origin), "--version").stderr_to_stdout().unchecked().read().ok();
     println!("v: {:?}", v);
     v.and_then(|s| s.trim().split(' ').last().map(String::from))
     // duct::cmd!(binary(origin), "--version")
