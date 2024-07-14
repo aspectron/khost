@@ -18,7 +18,7 @@ impl Config {
             .with_stats()
             .with_local_interface(8989);
 
-        let origin = Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("origin"))?;
+        let origin = Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("omega"))?;
         let kaspad = Network::into_iter()
             .map(|network| kaspad::Config::new(origin.clone(), network))
             .collect::<Vec<_>>();
