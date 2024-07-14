@@ -16,6 +16,7 @@ impl Action for Bootstrap {
         match self {
             Bootstrap::Default => {
                 if confirm("This will install the Kaspa software and configure services. Continue?")
+                    .initial_value(true)
                     .interact()?
                 {
                     ctx.config.resolver.enabled =

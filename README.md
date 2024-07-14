@@ -21,6 +21,7 @@ cargo install khost
 khost
 ```
 
+
 If you already have an existing user and rust installed, you can simply run `cargo install khost` and `sudo khost`.
 
 Please note that the user needs to have root privileges to run khost.

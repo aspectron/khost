@@ -27,8 +27,8 @@ impl Display for Status {
             self.services
                 .iter()
                 .map(|(service, status)| match status {
-                    Ok(status) => Content::field(service, style(status).green()),
-                    Err(status) => Content::field(service, style(status).red()),
+                    Ok(status) => Content::field(service, style(status).green().bright()),
+                    Err(status) => Content::field(service, style(status).red().bright()),
                 })
                 .collect::<Vec<_>>(),
         );
@@ -87,6 +87,24 @@ pub fn conflicts(_ctx: &Context, _status: &Status) {
 
     let mut system = System::new();
     system.refresh_processes();
+
+    // let processes : HashSet<String> = HashSet::from_iter(
+    //     system
+    //         .processes()
+    //         .values()
+    //         .filter_map(|proc| {
+    //             proc.exe().and_then(|path| {
+    //                 let path_str = path.display().to_string();
+    //                 (["kaspad", "kaspa-ng", "kaspa-resolver", "sparkled"]
+    //                     .iter()
+    //                     .any(|k| path_str.contains(k)))
+    //                 .then_some(path_str)
+    //                 // .then_some((path_str, (*proc).clone()))
+    //             })
+    //         })
+    //         // .collect::<Vec<_>>(),
+    // );
+
     let kaspad_paths = system
         .processes()
         .values()
@@ -96,23 +114,31 @@ pub fn conflicts(_ctx: &Context, _status: &Status) {
                 (["kaspad", "kaspa-ng", "kaspa-resolver", "sparkled"]
                     .iter()
                     .any(|k| path_str.contains(k)))
-                .then_some((proc, path))
+                .then_some(path)
             })
         })
-        .collect::<Vec<_>>();
+        .collect::<HashSet<_>>();
 
+    let mut abort = false;
     let root_folder = root_folder();
-    for (_proc, path) in kaspad_paths {
+    for path in kaspad_paths {
         if !path.starts_with(&root_folder) {
-            log::error(format!(
+            log::warning(format!(
                 "{} `{}`\n{}",
-                style("Detected unknown process at:").red(),
+                style("Detected conflicting process at:").red().bright(),
                 path.display(),
                 style("Please make sure no other process instances are running on this system.")
                     .yellow()
             ))
             .ok();
+            abort = true;
         }
+    }
+
+    if abort {
+        cliclack::outro("Unable to continue until conflicts are resolved.").ok();
+        println!();
+        std::process::exit(1);
     }
 
     rust::check().ok();
