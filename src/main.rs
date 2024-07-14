@@ -90,9 +90,10 @@ fn main() {
         }
     }
 
-    if let Err(err) = actions::Main::run(&mut ctx) {
-        outro(style(err.to_string()).red().bright()).ok();
-    }
+    actions::Main::run(&mut ctx).ok();
+    // if let Err(err) = actions::Main::run(&mut ctx) {
+    //     outro(style(err.to_string()).red().bright()).ok();
+    // }
 
     println!();
 }

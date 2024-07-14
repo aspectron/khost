@@ -83,8 +83,8 @@ pub fn fetch(origin: &Origin) -> Result<()> {
 
     track("Synchronizing resolver sources...", |step| {
         if path.exists() {
-            git::restore(&path, origin)?;
-            git::pull(&path, origin)?;
+            git::reset(&path)?;
+            git::pull(&path)?;
         } else {
             git::clone(&path, origin)?;
         }
@@ -211,12 +211,19 @@ pub fn build(origin: &Origin) -> Result<()> {
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
+    let hash = git::hash(folder(origin)).unwrap_or("unknown".to_string());
+
     duct::cmd!(binary(origin), "--version")
         .stderr_to_stdout()
         .unchecked()
         .read()
         .ok()
-        .and_then(|s| s.trim().split(' ').last().map(String::from))
+        .and_then(|s| {
+            s.trim()
+                .split(' ')
+                .last()
+                .map(|version| format!("{version}-{hash}"))
+        })
 }
 
 pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {

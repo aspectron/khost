@@ -147,8 +147,8 @@ pub fn fetch(ctx: &Context) -> Result<()> {
     for origin in unique_origins(ctx) {
         let path = folder(&origin);
         if path.exists() {
-            git::restore(&path, &origin)?;
-            git::pull(&path, &origin)?;
+            git::reset(&path)?;
+            git::pull(&path)?;
         } else {
             git::clone(&path, &origin)?;
         }
@@ -271,9 +271,11 @@ pub fn build(ctx: &Context) -> Result<()> {
     rust::update()?;
 
     for origin in unique_origins(ctx) {
+        let folder = folder(&origin);
+
         step(format!("Building Kaspad p2p node ({})", origin), || {
             cmd!("cargo", "build", "--release", "--bin", "kaspad")
-                .dir(folder(&origin))
+                .dir(&folder)
                 .run()
         })?;
 
@@ -300,12 +302,19 @@ pub fn base_folder() -> PathBuf {
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
+    let hash = git::hash(folder(origin)).unwrap_or("unknown".to_string());
+
     duct::cmd!(binary(origin), "--version")
         .stderr_to_stdout()
         .unchecked()
         .read()
         .ok()
-        .and_then(|s| s.trim().split(' ').last().map(String::from))
+        .and_then(|s| {
+            s.trim()
+                .split(' ')
+                .last()
+                .map(|version| format!("{version}-{hash}"))
+        })
 }
 
 pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {

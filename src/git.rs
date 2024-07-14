@@ -59,20 +59,28 @@ pub fn clone<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
     Ok(())
 }
 
-pub fn pull<P: AsRef<Path>>(path: P, _origin: &Origin) -> Result<()> {
+pub fn pull<P: AsRef<Path>>(path: P) -> Result<()> {
     let path = path.as_ref().display().to_string();
 
-    cmd("git", &["pull", &path]).dir(path).run()?;
+    cmd("git", &["pull"]).dir(path).run()?;
 
     Ok(())
 }
 
-pub fn restore<P: AsRef<Path>>(path: P, _origin: &Origin) -> Result<()> {
+pub fn reset<P: AsRef<Path>>(path: P) -> Result<()> {
     let path = path.as_ref().display().to_string();
 
-    cmd("git", &["restore", &path]).dir(path).run()?;
+    cmd("git", &["reset", "--hard", "HEAD"]).dir(path).run()?;
 
     Ok(())
+}
+
+pub fn hash<P: AsRef<Path>>(path: P) -> Result<String> {
+    let path = path.as_ref().display().to_string();
+    let hash = duct::cmd("git", &["rev-parse", "--short", "HEAD"])
+        .dir(path)
+        .read()?;
+    Ok(hash.trim().to_string())
 }
 
 pub fn version() -> Option<String> {
