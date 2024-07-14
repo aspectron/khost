@@ -189,14 +189,16 @@ pub fn nginx_config(_ctx: &Context, config: &Config) -> NginxConfig {
     if let Some(iface) = config.wrpc_borsh.as_ref() {
         let port = iface.port();
         let proxy_kind = ProxyKind::wrpc(port);
-        let proxy_config = ProxyConfig::new(format!("/{}/wrpc/borsh", config.network), proxy_kind);
+        let proxy_config =
+            ProxyConfig::new(format!("/kaspa/{}/wrpc/borsh", config.network), proxy_kind);
         proxy_configs.push(proxy_config);
     }
 
     if let Some(iface) = config.wrpc_json.as_ref() {
         let port = iface.port();
         let proxy_kind = ProxyKind::wrpc(port);
-        let proxy_config = ProxyConfig::new(format!("/{}/wrpc/json", config.network), proxy_kind);
+        let proxy_config =
+            ProxyConfig::new(format!("/kaspa/{}/wrpc/json", config.network), proxy_kind);
         proxy_configs.push(proxy_config);
     }
 
