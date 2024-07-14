@@ -129,6 +129,14 @@ pub fn unique_origins(ctx: &Context) -> HashSet<Origin> {
         .collect()
 }
 
+// pub fn active_unique_origins(ctx: &Context) -> HashSet<Origin> {
+//     ctx.config
+//         .kaspad
+//         .iter()
+//         .filter_map(|config| config.enabled.then_some(config.origin.clone()))
+//         .collect()
+// }
+
 pub fn active_configs(ctx: &Context) -> impl Iterator<Item = &Config> {
     ctx.config
         .kaspad
@@ -302,7 +310,7 @@ pub fn base_folder() -> PathBuf {
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
-    let hash = git::hash(folder(origin)).unwrap_or("unknown".to_string());
+    let hash = git::hash(folder(origin), true).unwrap_or("unknown".to_string());
 
     duct::cmd!(binary(origin), "--version")
         .stderr_to_stdout()
@@ -478,4 +486,30 @@ pub fn purge_data_folder(config: &Config) -> Result<()> {
             Ok(())
         },
     )
+}
+
+pub fn check_for_updates(ctx: &Context) -> Result<()> {
+    let mut updates = Vec::new();
+    for origin in unique_origins(ctx) {
+        let path = folder(&origin);
+
+        let latest = git::latest_commit_hash(&origin, true)?;
+        let current = git::hash(path, true)?;
+        if latest != current {
+            log::info(format!(
+                "Kaspad p2p node update available ({origin}): {current} -> {latest}"
+            ))?;
+            updates.push((origin, current, latest));
+        }
+    }
+
+    if !updates.is_empty()
+        && confirm("Update Kaspad p2p node?")
+            .initial_value(true)
+            .interact()?
+    {
+        update(ctx)?;
+    }
+
+    Ok(())
 }

@@ -3,6 +3,8 @@ use crate::imports::*;
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Origin {
     repository: String,
+    owner: String,
+    name: String,
     branch: Option<String>,
 }
 
@@ -19,24 +21,43 @@ impl Origin {
         if parts.len() < 3 {
             Err(Error::Repository(repository))
         } else {
+            let repo = repository.replace(".git", "");
+            let mut parts = repo.split('/').collect::<VecDeque<_>>();
+            let name = parts.pop_back().unwrap().to_string();
+            let owner = parts.pop_back().unwrap().to_string();
+
             Ok(Self {
-                repository: repo.to_string(),
+                repository,
+                name,
+                owner,
                 branch: branch.map(String::from),
             })
         }
     }
 
     pub fn folder(&self) -> PathBuf {
-        let repo = self.repository.replace(".git", "");
-        let mut parts = repo.split('/').collect::<VecDeque<_>>();
-        let _ = parts.pop_back().unwrap();
-        let org = parts.pop_back().unwrap();
+        // let repo = self.repository.replace(".git", "");
+        // let mut parts = repo.split('/').collect::<VecDeque<_>>();
+        // let _ = parts.pop_back().unwrap();
+        // let owner = parts.pop_back().unwrap();
         PathBuf::from(format!(
             "{}/{}",
-            org,
+            self.owner,
             self.branch.as_deref().unwrap_or("master")
         ))
     }
+
+    // pub fn folder(&self) -> PathBuf {
+    //     let repo = self.repository.replace(".git", "");
+    //     let mut parts = repo.split('/').collect::<VecDeque<_>>();
+    //     let _ = parts.pop_back().unwrap();
+    //     let owner = parts.pop_back().unwrap();
+    //     PathBuf::from(format!(
+    //         "{}/{}",
+    //         org,
+    //         self.branch.as_deref().unwrap_or("master")
+    //     ))
+    // }
 
     pub fn repository(&self) -> &str {
         &self.repository
@@ -75,12 +96,58 @@ pub fn reset<P: AsRef<Path>>(path: P) -> Result<()> {
     Ok(())
 }
 
-pub fn hash<P: AsRef<Path>>(path: P) -> Result<String> {
+pub fn hash<P: AsRef<Path>>(path: P, short: bool) -> Result<String> {
     let path = path.as_ref().display().to_string();
-    let hash = duct::cmd("git", &["rev-parse", "--short", "HEAD"])
-        .dir(path)
-        .read()?;
+
+    let args = if short {
+        vec!["rev-parse", "--short", "HEAD"]
+    } else {
+        vec!["rev-parse", "HEAD"]
+    };
+
+    let hash = duct::cmd("git", args).dir(path).read()?;
     Ok(hash.trim().to_string())
+}
+
+#[derive(Deserialize)]
+struct Commit {
+    sha: String,
+}
+
+#[derive(Deserialize)]
+struct Branch {
+    commit: Commit,
+}
+
+pub fn latest_commit_hash(origin: &Origin, short: bool) -> Result<String> {
+    let Origin {
+        owner,
+        name,
+        branch,
+        ..
+    } = origin;
+
+    let url = format!(
+        "https://api.github.com/repos/{}/{}/branches/{}",
+        owner,
+        name,
+        branch.as_deref().unwrap_or("master")
+    );
+
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .get(url)
+        .header("User-Agent", "reqwest")
+        .send()?
+        .json::<Branch>()?;
+
+    let hash = if short {
+        response.commit.sha[..7].to_string()
+    } else {
+        response.commit.sha
+    };
+
+    Ok(hash)
 }
 
 pub fn version() -> Option<String> {

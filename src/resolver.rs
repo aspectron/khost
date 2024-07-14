@@ -211,7 +211,7 @@ pub fn build(origin: &Origin) -> Result<()> {
 }
 
 pub fn version(origin: &Origin) -> Option<String> {
-    let hash = git::hash(folder(origin)).unwrap_or("unknown".to_string());
+    let hash = git::hash(folder(origin), true).unwrap_or("unknown".to_string());
 
     duct::cmd!(binary(origin), "--version")
         .stderr_to_stdout()
@@ -254,4 +254,33 @@ pub fn restart(config: &Config) -> Result<()> {
 
 pub fn status(config: &Config) -> Result<String> {
     systemd::status(service_name(config))
+}
+
+pub fn check_for_updates(ctx: &Context) -> Result<()> {
+    let config = &ctx.config.resolver;
+    if !config.enabled() {
+        return Ok(());
+    }
+    let mut updates = Vec::new();
+    let origin = &config.origin;
+    let path = folder(origin);
+
+    let latest = git::latest_commit_hash(origin, true)?;
+    let current = git::hash(path, true)?;
+    if latest != current {
+        log::info(format!(
+            "Resolver update available ({origin}): {current} -> {latest}"
+        ))?;
+        updates.push((origin, current, latest));
+    }
+
+    if !updates.is_empty()
+        && confirm("Update Kaspa RPC Resolver?")
+            .initial_value(true)
+            .interact()?
+    {
+        update(ctx)?;
+    }
+
+    Ok(())
 }

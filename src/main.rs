@@ -88,6 +88,9 @@ fn main() {
             log::error(err).ok();
             log::info("You can attempt another full install from 'Advanced' menu").ok();
         }
+    } else {
+        kaspad::check_for_updates(&ctx).ok();
+        resolver::check_for_updates(&ctx).ok();
     }
 
     actions::Main::run(&mut ctx).ok();
