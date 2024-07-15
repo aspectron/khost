@@ -9,7 +9,14 @@ pub mod prelude {
 const NGINX_CONFIG_PATH: &str = "/etc/nginx/";
 
 pub fn nginx_service_detail() -> ServiceDetail {
-    ServiceDetail::new("NGINX HTTP proxy", "nginx", ServiceKind::Nginx, true, false)
+    ServiceDetail::new(
+        "NGINX HTTP proxy",
+        "nginx",
+        ServiceKind::Nginx,
+        None,
+        true,
+        false,
+    )
 }
 
 pub struct Certs {

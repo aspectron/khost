@@ -7,6 +7,8 @@ pub enum Advanced {
     Back,
     #[describe("Rebuild configuration")]
     Rebuild,
+    #[describe("Configure Git")]
+    Git,
     #[describe("Full installation")]
     Full,
     #[describe("Delete Kaspa Data folders")]
@@ -69,6 +71,79 @@ impl Action for Advanced {
                 }
                 Ok(true)
             }
+            Advanced::Git => {
+                let services = ctx.managed_services();
+                let list = vec![BranchChange::Kaspad]
+                    .into_iter()
+                    .chain(services.into_iter().map(BranchChange::Service))
+                    .collect::<Vec<_>>();
+                let mut selector = cliclack::select("Select service to configure Git origin");
+                for item in list.iter() {
+                    selector = selector.item(item, item, "");
+                }
+                match selector.interact() {
+                    Ok(BranchChange::Kaspad) => {
+                        let origin = git::create_origin("rusty-kaspa")?;
+                        for config in ctx.config.kaspad.iter_mut() {
+                            config.set_origin(origin.clone());
+                        }
+                        ctx.config.save()?;
+                        log::success("Git origin updated successfully")?;
+                        kaspad::update(ctx)?;
+                        Ok(true)
+                    }
+                    Ok(BranchChange::Service(service)) => {
+                        let name = service
+                            .origin
+                            .as_ref()
+                            .expect("Service origin not set")
+                            .name();
+                        let origin = git::create_origin(name)?;
+                        match &service.kind {
+                            ServiceKind::Kaspad(network) => {
+                                kaspad::find_config_by_network(ctx, network)
+                                    .expect("Kaspad config not found")
+                                    .set_origin(origin);
+                                ctx.config.save()?;
+                                log::success("Git origin updated successfully")?;
+                                kaspad::update(ctx)?;
+                                Ok(true)
+                            }
+                            ServiceKind::Resolver => {
+                                ctx.config.resolver.origin = origin.clone();
+                                ctx.config.save()?;
+                                log::success("Git origin updated successfully")?;
+                                resolver::update(ctx)?;
+                                Ok(true)
+                            }
+                            kind => {
+                                log::error(format!("Service {kind:?} not supported"))?;
+                                Ok(true)
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::error(e)?;
+                        Ok(true)
+                    }
+                }
+                // Ok(true)
+            }
+        }
+    }
+}
+
+#[derive(Eq, PartialEq, Debug, Clone)]
+pub enum BranchChange {
+    Kaspad,
+    Service(ServiceDetail),
+}
+
+impl Display for BranchChange {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            BranchChange::Kaspad => write!(f, "Kaspad p2p node (all instances)"),
+            BranchChange::Service(service) => write!(f, "{}", service),
         }
     }
 }

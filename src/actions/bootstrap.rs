@@ -22,6 +22,8 @@ impl Action for Bootstrap {
                     ctx.config.resolver.enabled =
                         confirm("Would you like to install Kaspa resolver?").interact()?;
 
+                    kaspad::select_networks(ctx)?;
+
                     bootstrap::run(ctx)?;
                     ctx.config.bootstrap = true;
                     ctx.config.save()?;

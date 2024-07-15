@@ -43,6 +43,9 @@ pub enum Error {
 
     #[error("Hash {0}")]
     Hash(String),
+
+    #[error("Origin {0}")]
+    Origin(crate::git::Origin),
 }
 
 impl From<String> for Error {

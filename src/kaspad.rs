@@ -24,6 +24,7 @@ impl Service for Config {
             "Kaspa p2p node",
             format!("kaspa-{}", self.network),
             ServiceKind::Kaspad(self.network),
+            Some(self.origin.clone()),
             self.enabled,
             true,
         )
@@ -64,6 +65,18 @@ impl Config {
 
     pub fn network(&self) -> Network {
         self.network
+    }
+
+    pub fn enable(&mut self) {
+        self.enabled = true;
+    }
+
+    pub fn disable(&mut self) {
+        self.enabled = true;
+    }
+
+    pub fn set_origin(&mut self, origin: Origin) {
+        self.origin = origin;
     }
 }
 
@@ -214,7 +227,7 @@ pub fn update(ctx: &Context) -> Result<()> {
         }
         Ok(())
     })?;
-    log::success("Update successful");
+    log::success("Update successful")?;
     Ok(())
 }
 
@@ -519,5 +532,81 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
         update(ctx)?;
     }
 
+    Ok(())
+}
+
+pub fn find_config_by_network<'a>(
+    ctx: &'a mut Context,
+    network: &Network,
+) -> Option<&'a mut Config> {
+    ctx.config
+        .kaspad
+        .iter_mut()
+        .find(|config| config.network == *network)
+}
+
+pub fn find_config_by_service_detail<'a>(
+    ctx: &'a mut Context,
+    detail: &ServiceDetail,
+) -> Option<&'a mut Config> {
+    ctx.config
+        .kaspad
+        .iter_mut()
+        .find(|config| service_name(*config) == detail.name)
+}
+
+pub fn select_networks(ctx: &mut Context) -> Result<()> {
+    if ctx.system.total_memory < 17 * 1024 * 1024 * 1024 {
+        log::warning(format!(
+            "Detected RAM is {}, minimum required for multiple networks is 32 Gb.",
+            as_gb(ctx.system.total_memory as f64, false, false)
+        ))?;
+
+        let mut selector = cliclack::select("Select Kaspa p2p node network to enable");
+        let details = ctx
+            .config
+            .kaspad
+            .iter()
+            .map(service_detail)
+            .collect::<Vec<_>>();
+        let selected = active_configs(ctx).next().map(service_detail);
+        if let Some(selected) = selected {
+            selector = selector.initial_value(selected);
+        }
+        for detail in details {
+            selector = selector.item(detail.clone(), detail, "");
+        }
+        let selected = selector.interact()?;
+        ctx.config.kaspad.iter_mut().for_each(Config::disable);
+        find_config_by_service_detail(ctx, &selected)
+            .unwrap()
+            .enable();
+    } else {
+        let details = ctx
+            .config
+            .kaspad
+            .iter()
+            .map(service_detail)
+            .collect::<Vec<_>>();
+        let enabled = details
+            .iter()
+            .filter(|config| config.enabled)
+            .cloned()
+            .collect::<Vec<_>>();
+        let mut selector = cliclack::multiselect("Select Kaspa p2p node networks to enable");
+        if !enabled.is_empty() {
+            selector = selector.initial_values(enabled);
+        }
+        for detail in details {
+            selector = selector.item(detail.clone(), detail, "");
+        }
+        let selected = selector.interact()?;
+        ctx.config.kaspad.iter_mut().for_each(Config::disable);
+        for detail in selected {
+            find_config_by_service_detail(ctx, &detail)
+                .unwrap()
+                .enable();
+        }
+    }
     Ok(())
 }

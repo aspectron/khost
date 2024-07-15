@@ -19,6 +19,7 @@ impl Service for Config {
             "Kaspa RPC resolver",
             SERVICE_NAME,
             ServiceKind::Resolver,
+            Some(self.origin.clone()),
             self.enabled,
             true,
         )

@@ -23,15 +23,25 @@ impl Display for Status {
                 .unwrap_or(style("N/A").red().bright()),
         ));
         rows.push(Content::separator());
-        rows.extend(
-            self.services
-                .iter()
-                .map(|(service, status)| match status {
-                    Ok(status) => Content::field(service, style(status).green().bright()),
-                    Err(status) => Content::field(service, style(status).red().bright()),
-                })
-                .collect::<Vec<_>>(),
-        );
+        for (service, status) in self.services.iter() {
+            let content = match status {
+                Ok(status) => Content::field(service, style(status).green().bright()),
+                Err(status) => Content::field(service, style(status).red().bright()),
+            };
+            rows.push(content);
+            if let Some(origin) = &service.origin {
+                rows.push(Content::field("", origin));
+            }
+        }
+        // rows.extend(
+        //     self.services
+        //         .iter()
+        //         .map(|(service, status)| match status {
+        //             Ok(status) => Content::field(service, style(status).green().bright()),
+        //             Err(status) => Content::field(service, style(status).red().bright()),
+        //         })
+        //         .collect::<Vec<_>>(),
+        // );
 
         writeln!(f, "{}", content(rows))?;
         Ok(())

@@ -2,6 +2,7 @@ use crate::imports::*;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    pub version: u64,
     // Bootstrap was executed
     pub bootstrap: bool,
     pub public: bool,
@@ -24,6 +25,7 @@ impl Config {
             .collect::<Vec<_>>();
 
         Ok(Config {
+            version: 1,
             bootstrap: false,
             public: true,
             fqdn: None,

@@ -12,12 +12,20 @@ pub struct ServiceDetail {
     pub caption: String,
     pub name: String,
     pub kind: ServiceKind,
+    pub origin: Option<Origin>,
     pub enabled: bool,
     pub managed: bool,
 }
 
 impl ServiceDetail {
-    pub fn new<C, N>(caption: C, name: N, kind: ServiceKind, enabled: bool, managed: bool) -> Self
+    pub fn new<C, N>(
+        caption: C,
+        name: N,
+        kind: ServiceKind,
+        origin: Option<Origin>,
+        enabled: bool,
+        managed: bool,
+    ) -> Self
     where
         C: Display,
         N: Display,
@@ -26,6 +34,7 @@ impl ServiceDetail {
             caption: caption.to_string(),
             name: name.to_string(),
             kind,
+            origin,
             enabled,
             managed,
         }

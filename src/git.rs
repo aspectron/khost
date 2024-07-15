@@ -66,6 +66,26 @@ impl Origin {
     pub fn branch(&self) -> Option<&str> {
         self.branch.as_deref()
     }
+
+    pub fn api_url(&self) -> String {
+        let Origin {
+            owner,
+            name,
+            branch,
+            ..
+        } = self;
+
+        format!(
+            "https://api.github.com/repos/{}/{}/branches/{}",
+            owner,
+            name,
+            branch.as_deref().unwrap_or("master")
+        )
+    }
+
+    pub fn name(&self) -> &str {
+        &self.name
+    }
 }
 
 pub fn clone<P: AsRef<Path>>(path: P, origin: &Origin) -> Result<()> {
@@ -123,24 +143,10 @@ struct Branch {
 }
 
 pub fn latest_commit_hash(origin: &Origin, short: bool) -> Result<String> {
-    let Origin {
-        owner,
-        name,
-        branch,
-        ..
-    } = origin;
-
-    let url = format!(
-        "https://api.github.com/repos/{}/{}/branches/{}",
-        owner,
-        name,
-        branch.as_deref().unwrap_or("master")
-    );
-
     let client = reqwest::blocking::Client::new();
     let response = client
-        .get(url)
-        .header("User-Agent", "reqwest")
+        .get(origin.api_url())
+        .header("User-Agent", "khost")
         .send()?
         .json::<Branch>()?;
 
@@ -158,4 +164,62 @@ pub fn version() -> Option<String> {
         .read()
         .ok()
         .map(|s| s.trim().to_string())
+}
+
+pub fn create_origin_impl<S>(name: S, origin: Option<Origin>) -> Result<Origin>
+where
+    S: Display,
+{
+    let name = name.to_string();
+    let mut input = cliclack::input("Enter GitHub repository owner/organization:")
+        .placeholder("")
+        .validate(|v: &String| {
+            if v.trim().is_empty() {
+                Err("Please enter a valid owner/organization name".to_string())
+            } else {
+                Ok(())
+            }
+        });
+    if let Some(origin) = &origin {
+        input = input.default_input(origin.owner.as_str());
+    }
+    let owner: String = input.interact()?;
+
+    let mut input = cliclack::input("Enter repository branch: ").required(false);
+    if let Some(origin) = &origin {
+        if let Some(branch) = origin.branch() {
+            input = input.default_input(branch);
+        }
+    }
+    let branch: String = input.interact()?;
+    let branch = branch.trim().to_string();
+    let branch = (!branch.is_empty()).then_some(branch);
+
+    let origin = Origin::try_new(
+        &format!("https://github.com/{owner}/{name}"),
+        branch.as_deref(),
+    )?;
+    latest_commit_hash(&origin, false).map_err(|_| Error::Origin(origin.clone()))?;
+
+    Ok(origin)
+}
+
+pub fn create_origin<S>(name: S) -> Result<Origin>
+where
+    S: Display,
+{
+    let mut last_origin = None;
+    loop {
+        match create_origin_impl(&name, last_origin) {
+            Ok(origin) => {
+                return Ok(origin);
+            }
+            Err(Error::Origin(origin)) => {
+                last_origin = Some(origin);
+            }
+            Err(err) => {
+                return Err(err);
+            }
+        }
+    }
 }
