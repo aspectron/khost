@@ -22,6 +22,7 @@ pub mod service;
 pub mod status;
 pub mod system;
 pub mod systemd;
+pub mod tls;
 pub mod utils;
 #[macro_use]
 pub mod cmd;

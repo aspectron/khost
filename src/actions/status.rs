@@ -2,11 +2,9 @@ use crate::imports::*;
 
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Manage"]
-pub enum Manage {
+pub enum Status {
     #[describe("Back")]
     Back,
-    #[describe("Enable / Disable services")]
-    Enable,
     #[describe("Kaspa p2p node status")]
     Kaspad,
     #[describe("Resolver status")]
@@ -19,30 +17,12 @@ pub enum Manage {
     FollowLogs,
 }
 
-impl Action for Manage {
+impl Action for Status {
     fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
-            Manage::Back => Ok(false),
-            Manage::Enable => {
-                let services = ctx.managed_services();
-                let active = ctx.managed_active_services();
-                let mut selector =
-                    cliclack::multiselect("Select services to enable (ESC to cancel)")
-                        .initial_values(active);
-                for service in services {
-                    selector = selector.item(service.clone(), service, "");
-                }
-                match selector.interact() {
-                    Ok(services) => {
-                        enable_services(ctx, services)?;
-                    }
-                    Err(_) => {
-                        println!();
-                    }
-                }
-                Ok(true)
-            }
-            Manage::FollowLogs => {
+            Status::Back => Ok(false),
+            Status::FollowLogs => {
+                log::info("Please note: you will need to restart khost after following logs.\nPress Ctrl+C to stop following logs")?;
                 match ctx.select_active_service("Select service to follow logs") {
                     Ok(detail) => {
                         sudo!("journalctl", "-fu", detail.name).inner().run()?;
@@ -53,7 +33,7 @@ impl Action for Manage {
                 }
                 Ok(true)
             }
-            Manage::ViewLogs => {
+            Status::ViewLogs => {
                 match ctx.select_active_service("Select service to view logs") {
                     Ok(detail) => {
                         sudo!("journalctl", "-u", detail.name).inner().run()?;
@@ -64,7 +44,7 @@ impl Action for Manage {
                 }
                 Ok(true)
             }
-            Manage::Kaspad => {
+            Status::Kaspad => {
                 let active_configs = kaspad::active_configs(ctx).collect::<Vec<_>>();
                 if active_configs.is_empty() {
                     log::warning("No active kaspad configurations found")?;
@@ -84,7 +64,7 @@ impl Action for Manage {
 
                 Ok(true)
             }
-            Manage::Resolver => {
+            Status::Resolver => {
                 let config = &ctx.config.resolver;
                 if !config.enabled() {
                     log::warning("Resolver is not enabled")?;
@@ -95,7 +75,7 @@ impl Action for Manage {
                 }
                 Ok(true)
             }
-            Manage::Nginx => {
+            Status::Nginx => {
                 let status = nginx::status()?;
                 println!("{}", truncate_to_terminal(status));
                 println!();

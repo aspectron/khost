@@ -3,7 +3,7 @@
 use crate::imports::*;
 
 pub mod prelude {
-    pub use super::{Certs, Config as NginxConfig, ProxyConfig, ProxyKind, ServerKind};
+    pub use super::{Certs, ProxyConfig, ProxyKind, ServerKind, ServiceConfig as NginxConfig};
 }
 
 const NGINX_CONFIG_PATH: &str = "/etc/nginx/";
@@ -19,9 +19,42 @@ pub fn nginx_service_detail() -> ServiceDetail {
     )
 }
 
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+pub struct Config {
+    certs: Option<Certs>,
+}
+
+impl Config {
+    pub fn certs(&self) -> Option<Certs> {
+        self.certs.clone()
+    }
+
+    pub fn disable_certs(&mut self) {
+        self.certs = None;
+    }
+
+    pub fn enable_certs(&mut self, certs: Certs) {
+        self.certs = Some(certs);
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Certs {
     pub key: String,
     pub crt: String,
+}
+
+impl Certs {
+    pub fn new<K, C>(key: K, crt: C) -> Self
+    where
+        K: AsRef<Path>,
+        C: AsRef<Path>,
+    {
+        Self {
+            key: key.as_ref().display().to_string(),
+            crt: crt.as_ref().display().to_string(),
+        }
+    }
 }
 
 pub enum ServerKind {
@@ -29,7 +62,7 @@ pub enum ServerKind {
         port: Option<u16>,
         fqdns: Vec<String>,
     },
-    Ssl {
+    Tls {
         port: Option<u16>,
         certs: Certs,
         fqdns: Vec<String>,
@@ -37,6 +70,21 @@ pub enum ServerKind {
 }
 
 impl ServerKind {
+    pub fn new(certs: Option<Certs>) -> Self {
+        match certs {
+            Some(certs) => Self::tls(certs),
+            None => Self::http(),
+        }
+    }
+
+    pub fn tls(certs: Certs) -> Self {
+        Self::Tls {
+            port: Default::default(),
+            fqdns: vec![],
+            certs,
+        }
+    }
+
     pub fn http() -> Self {
         Self::Http {
             port: Default::default(),
@@ -47,7 +95,7 @@ impl ServerKind {
     pub fn with_port(mut self, port: u16) -> Self {
         match &mut self {
             Self::Http { port: p, .. } => *p = Some(port),
-            Self::Ssl { port: p, .. } => *p = Some(port),
+            Self::Tls { port: p, .. } => *p = Some(port),
         }
 
         self
@@ -60,7 +108,7 @@ impl ServerKind {
             .collect::<Vec<String>>();
         match &mut self {
             Self::Http { fqdns, .. } => fqdns.extend(fqdns_),
-            Self::Ssl { fqdns, .. } => fqdns.extend(fqdns_),
+            Self::Tls { fqdns, .. } => fqdns.extend(fqdns_),
         }
 
         self
@@ -68,7 +116,7 @@ impl ServerKind {
 
     pub fn with_certs<S: Display>(mut self, key: S, crt: S) -> Self {
         match &mut self {
-            Self::Ssl { certs, .. } => {
+            Self::Tls { certs, .. } => {
                 certs.key = key.to_string();
                 certs.crt = crt.to_string();
             }
@@ -110,13 +158,13 @@ impl ProxyConfig {
     }
 }
 
-pub struct Config {
+pub struct ServiceConfig {
     pub service_name: String,
     pub server_kind: ServerKind,
     pub proxy_config: Vec<ProxyConfig>,
 }
 
-impl Config {
+impl ServiceConfig {
     pub fn new<S: Display>(
         service_name: S,
         server_kind: ServerKind,
@@ -130,7 +178,7 @@ impl Config {
     }
 }
 
-impl Display for Config {
+impl Display for ServiceConfig {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         writeln!(f, "# {}", self.service_name)?;
         writeln!(f, "server {{")?;
@@ -142,7 +190,7 @@ impl Display for Config {
                 writeln!(f, "\tlisten [::]:{port};")?;
                 writeln!(f, "\tserver_name {};", fqdn::flatten(fqdns))?;
             }
-            ServerKind::Ssl { port, certs, fqdns } => {
+            ServerKind::Tls { port, certs, fqdns } => {
                 let port = port.unwrap_or(443);
                 writeln!(f, "\tlisten {port} ssl;")?;
                 writeln!(f, "\tlisten [::]:{port} ssl;")?;
@@ -211,11 +259,11 @@ pub fn status() -> Result<String> {
     systemd::status("nginx")
 }
 
-pub fn reconfigure() -> Result<()> {
-    // TODO
-    // let nginx_config = fs::read_to_string(PathBuf::from(NGINX_CONFIG_PATH).join("nginx.conf"))?;
-    Ok(())
-}
+// pub fn reconfigure() -> Result<()> {
+//     // TODO
+//     // let nginx_config = fs::read_to_string(PathBuf::from(NGINX_CONFIG_PATH).join("nginx.conf"))?;
+//     Ok(())
+// }
 
 pub fn config_filename<S>(service_name: S) -> PathBuf
 where
@@ -224,7 +272,7 @@ where
     PathBuf::from(NGINX_CONFIG_PATH).join(format!("sites-enabled/{service_name}.conf"))
 }
 
-pub fn create(config: Config) -> Result<()> {
+pub fn create(config: ServiceConfig) -> Result<()> {
     let config_filename = config_filename(&config.service_name);
     sudo::fs::write(config_filename, config.to_string())?;
     Ok(())

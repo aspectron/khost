@@ -4,6 +4,8 @@ use nginx::prelude::*;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     enabled: bool,
+    #[serde(default)]
+    certs: Option<Certs>,
     origin: Origin,
     network: Network,
     data_folder: Option<PathBuf>,
@@ -41,6 +43,7 @@ impl Config {
 
         Self {
             enabled: false,
+            certs: None,
             origin,
             network,
             data_folder: None,
@@ -193,9 +196,13 @@ pub fn is_installed(ctx: &Context) -> bool {
         .all(|origin| binary(origin).exists())
 }
 
-pub fn nginx_config(_ctx: &Context, config: &Config) -> NginxConfig {
-    let fqdns = fqdn::get(false);
-    let server_kind = ServerKind::http().with_fqdn(fqdns);
+pub fn certs(ctx: &Context, config: &Config) -> Option<Certs> {
+    config.certs.clone().or(ctx.config.nginx.certs())
+}
+
+pub fn nginx_config(ctx: &Context, config: &Config) -> NginxConfig {
+    let fqdns = fqdn::get();
+    let server_kind = ServerKind::new(certs(ctx, config)).with_fqdn(fqdns);
 
     let mut proxy_configs = Vec::new();
 
@@ -470,6 +477,13 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
 
     log::success("Configuration updated")?;
 
+    Ok(())
+}
+
+pub fn reconfigure_nginx(ctx: &Context) -> Result<()> {
+    for config in active_configs(ctx) {
+        nginx::create(nginx_config(ctx, config))?;
+    }
     Ok(())
 }
 

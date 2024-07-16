@@ -8,6 +8,7 @@ pub struct Config {
     pub public: bool,
     pub fqdn: Option<String>,
     pub ip: Option<String>,
+    pub nginx: nginx::Config,
     pub kaspad: Vec<kaspad::Config>,
     pub resolver: resolver::Config,
 }
@@ -24,12 +25,15 @@ impl Config {
             .map(|network| kaspad::Config::new(origin.clone(), network))
             .collect::<Vec<_>>();
 
+        let nginx = nginx::Config::default();
+
         Ok(Config {
             version: 1,
             bootstrap: false,
             public: true,
             fqdn: None,
             ip: None,
+            nginx,
             kaspad,
             resolver,
         })

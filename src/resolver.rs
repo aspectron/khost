@@ -6,6 +6,8 @@ pub const SERVICE_NAME: &str = "kaspa-resolver";
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Config {
     pub enabled: bool,
+    #[serde(default)]
+    pub certs: Option<Certs>,
     pub origin: Origin,
     pub sync: bool,
     pub stats: bool,
@@ -30,6 +32,7 @@ impl Config {
     pub fn new(origin: Origin) -> Self {
         Self {
             enabled: false,
+            certs: None,
             origin,
             sync: false,
             stats: true,
@@ -136,10 +139,18 @@ pub fn install(ctx: &mut Context) -> Result<()> {
     Ok(())
 }
 
+pub fn certs(ctx: &Context) -> Option<Certs> {
+    ctx.config
+        .resolver
+        .certs
+        .clone()
+        .or(ctx.config.nginx.certs())
+}
+
 pub fn nginx_config(ctx: &Context) -> NginxConfig {
     let config = &ctx.config.resolver;
-    let fqdns = fqdn::get(false);
-    let server_kind = ServerKind::http().with_fqdn(fqdns);
+    let fqdns = fqdn::get();
+    let server_kind = ServerKind::new(certs(ctx)).with_fqdn(fqdns);
     let proxy_kind = ProxyKind::http(8989);
     let proxy_config = ProxyConfig::new("/", proxy_kind);
     NginxConfig::new(service_name(config), server_kind, vec![proxy_config])
@@ -283,5 +294,10 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
         update(ctx)?;
     }
 
+    Ok(())
+}
+
+pub fn reconfigure_nginx(ctx: &Context) -> Result<()> {
+    nginx::create(nginx_config(ctx))?;
     Ok(())
 }
