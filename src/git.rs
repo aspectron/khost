@@ -171,35 +171,68 @@ where
     S: Display,
 {
     let name = name.to_string();
-    let mut input = cliclack::input("Enter GitHub repository owner/organization:")
-        .placeholder("")
-        .validate(|v: &String| {
-            if v.trim().is_empty() {
-                Err("Please enter a valid owner/organization name".to_string())
-            } else {
-                Ok(())
-            }
-        });
-    if let Some(origin) = &origin {
-        input = input.default_input(origin.owner.as_str());
-    }
-    let owner: String = input.interact()?;
 
-    let mut input = cliclack::input("Enter repository branch: ").required(false);
-    if let Some(origin) = &origin {
-        if let Some(branch) = origin.branch() {
-            input = input.default_input(branch);
+    #[derive(Debug, Clone, Copy, Eq, PartialEq)]
+    enum Preset {
+        Omega,
+        Delta,
+        Custom,
+    }
+
+    let preset = if name == "rusty-kaspa" {
+        cliclack::select(format!("Select git origin for '{name}':"))
+            .item(Preset::Omega, "Omega (aspectron/omega - wRPC v2)", "")
+            .item(
+                Preset::Delta,
+                "Delta",
+                "(aspectron/delta - wRPC v2 + GD perf)",
+            )
+            .item(Preset::Custom, "Custom", "")
+            .interact()?
+    } else {
+        Preset::Custom
+    };
+
+    let origin = match preset {
+        Preset::Omega => {
+            Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("omega"))?
         }
-    }
-    let branch: String = input.interact()?;
-    let branch = branch.trim().to_string();
-    let branch = (!branch.is_empty()).then_some(branch);
+        Preset::Delta => {
+            Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("delta"))?
+        }
+        Preset::Custom => {
+            let mut input = cliclack::input("Enter GitHub repository owner/organization:")
+                .placeholder("")
+                .validate(|v: &String| {
+                    if v.trim().is_empty() {
+                        Err("Please enter a valid owner/organization name".to_string())
+                    } else {
+                        Ok(())
+                    }
+                });
+            if let Some(origin) = &origin {
+                input = input.default_input(origin.owner.as_str());
+            }
+            let owner: String = input.interact()?;
 
-    let origin = Origin::try_new(
-        &format!("https://github.com/{owner}/{name}"),
-        branch.as_deref(),
-    )?;
-    latest_commit_hash(&origin, false).map_err(|_| Error::Origin(origin.clone()))?;
+            let mut input = cliclack::input("Enter repository branch: ").required(false);
+            if let Some(origin) = &origin {
+                if let Some(branch) = origin.branch() {
+                    input = input.default_input(branch);
+                }
+            }
+            let branch: String = input.interact()?;
+            let branch = branch.trim().to_string();
+            let branch = (!branch.is_empty()).then_some(branch);
+
+            let origin = Origin::try_new(
+                &format!("https://github.com/{owner}/{name}"),
+                branch.as_deref(),
+            )?;
+            latest_commit_hash(&origin, false).map_err(|_| Error::Origin(origin.clone()))?;
+            origin
+        }
+    };
 
     Ok(origin)
 }

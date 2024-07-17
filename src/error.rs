@@ -46,6 +46,9 @@ pub enum Error {
 
     #[error("Origin {0}")]
     Origin(crate::git::Origin),
+
+    #[error("User abort")]
+    UserAbort,
 }
 
 impl From<String> for Error {
