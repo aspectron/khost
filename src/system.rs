@@ -1,6 +1,7 @@
 use crate::imports::*;
 
 pub struct System {
+    pub system_id: Option<u64>,
     pub cpu_physical_cores: Option<usize>,
     pub cpu_frequency: Option<u64>,
     pub cpu_brand: Option<String>,
@@ -93,7 +94,7 @@ impl Default for System {
             .unzip();
 
         let disk_usage = disk_usage();
-
+        let system_id = Self::try_system_id_as_u64();
         // ---
 
         // for (pid, process) in system.processes() {
@@ -101,6 +102,7 @@ impl Default for System {
         // }
 
         Self {
+            system_id,
             cpu_physical_cores: cpu_physical_core_count,
             cpu_frequency,
             cpu_brand,
@@ -108,6 +110,29 @@ impl Default for System {
             long_os_version,
             disk_usage,
         }
+    }
+}
+
+impl System {
+    fn try_system_id_as_u64() -> Option<u64> {
+        Self::try_system_id().and_then(|v| v[0..8].try_into().ok().map(u64::from_le_bytes))
+    }
+    fn try_system_id() -> Option<Vec<u8>> {
+        let some_id = if let Ok(mut file) = std::fs::File::open("/etc/machine-id") {
+            // fetch the system id from /etc/machine-id
+            let mut machine_id = String::new();
+            file.read_to_string(&mut machine_id).ok();
+            machine_id
+        } else if let Ok(Some(mac)) = mac_address::get_mac_address() {
+            // fallback on the mac address
+            mac.to_string()
+        } else {
+            // 🤷
+            return None;
+        };
+        let mut sha256 = Sha256::default();
+        sha256.update(some_id.as_bytes());
+        Some(sha256.finalize().to_vec())
     }
 }
 

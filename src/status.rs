@@ -6,8 +6,6 @@ type ServiceStateVec = Vec<(ServiceDetail, std::result::Result<String, String>)>
 pub struct Status {
     pub ip: Option<String>,
     pub system: Arc<System>,
-    // pub services: Vec<(String, String)>,
-    // pub errors: Vec<(String, String)>,
     pub services: ServiceStateVec,
 }
 
@@ -16,7 +14,15 @@ impl Display for Status {
         let mut rows: Vec<Content> = self.system.as_ref().into();
         rows.push(Content::separator());
         rows.push(Content::field(
-            "Public IP:",
+            "System id:",
+            self.system
+                .system_id
+                .as_ref()
+                .map(|id| style(format!("{id:x}")).cyan().bright())
+                .unwrap_or(style("N/A".to_string()).red().bright()),
+        ));
+        rows.push(Content::field(
+            "Public ip:",
             self.ip
                 .as_deref()
                 .map(|ip| style(ip).cyan().bright())
@@ -33,15 +39,6 @@ impl Display for Status {
                 rows.push(Content::field("", origin));
             }
         }
-        // rows.extend(
-        //     self.services
-        //         .iter()
-        //         .map(|(service, status)| match status {
-        //             Ok(status) => Content::field(service, style(status).green().bright()),
-        //             Err(status) => Content::field(service, style(status).red().bright()),
-        //         })
-        //         .collect::<Vec<_>>(),
-        // );
 
         writeln!(f, "{}", content(rows))?;
         Ok(())
@@ -97,23 +94,6 @@ pub fn conflicts(_ctx: &Context, _status: &Status) {
 
     let mut system = System::new();
     system.refresh_processes();
-
-    // let processes : HashSet<String> = HashSet::from_iter(
-    //     system
-    //         .processes()
-    //         .values()
-    //         .filter_map(|proc| {
-    //             proc.exe().and_then(|path| {
-    //                 let path_str = path.display().to_string();
-    //                 (["kaspad", "kaspa-ng", "kaspa-resolver", "sparkled"]
-    //                     .iter()
-    //                     .any(|k| path_str.contains(k)))
-    //                 .then_some(path_str)
-    //                 // .then_some((path_str, (*proc).clone()))
-    //             })
-    //         })
-    //         // .collect::<Vec<_>>(),
-    // );
 
     let kaspad_paths = system
         .processes()

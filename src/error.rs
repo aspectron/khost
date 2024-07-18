@@ -49,6 +49,9 @@ pub enum Error {
 
     #[error("User abort")]
     UserAbort,
+
+    #[error(transparent)]
+    TryFromSlice(#[from] std::array::TryFromSliceError),
 }
 
 impl From<String> for Error {
