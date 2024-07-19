@@ -40,29 +40,6 @@ fn main() {
 
     let args = args::parse();
 
-    loop {
-        match cliclack::password("Enter user password:").interact() {
-            Ok(password) => {
-                if duct::cmd!("sudo", "-kS", "-p", "", "echo", "khost")
-                    .stdin_bytes(password.as_bytes())
-                    .stderr_to_stdout()
-                    .read()
-                    .is_ok()
-                {
-                    sudo::init_password(password);
-                    break;
-                } else {
-                    log::error("Invalid password").ok();
-                }
-            }
-            Err(e) => {
-                log::error(e.to_string()).ok();
-                outro("Exiting...").ok();
-                std::process::exit(1);
-            }
-        }
-    }
-
     if runtime::is_windows() {
         let _ = log::error("kHOST supports Linux OS only");
         let _ = outro("Exiting...");
@@ -73,7 +50,10 @@ fn main() {
     // Check for updates
     khost::update().ok();
 
+    // init context & load khost config
     let mut ctx = Context::try_new(args).unwrap();
+
+    sudo::init(&mut ctx);
 
     let first_run = !ctx.config.bootstrap;
     // let first_run = true;

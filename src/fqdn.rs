@@ -1,8 +1,12 @@
 const DOMAINS: &[&str] = &[
-    "kaspa-ng.net",
     "kaspa.stream",
+    "kaspa.red",
+    "kaspa.green",
+    "kaspa.blue",
+    "kaspa-ng.net",
     "kaspa-ng.org",
     "kaspa-ng.io",
+    "kaspa.org",
     "kaspacalc.net",
 ];
 

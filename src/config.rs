@@ -5,6 +5,7 @@ pub struct Config {
     pub version: u64,
     // Bootstrap was executed
     pub bootstrap: bool,
+    pub disable_sudo_prompt: bool,
     pub public: bool,
     pub fqdn: Option<String>,
     pub ip: Option<String>,
@@ -30,6 +31,7 @@ impl Config {
         Ok(Config {
             version: 1,
             bootstrap: false,
+            disable_sudo_prompt: false,
             public: true,
             fqdn: None,
             ip: None,

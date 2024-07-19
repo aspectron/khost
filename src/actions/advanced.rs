@@ -15,6 +15,8 @@ pub enum Advanced {
     PurgeData,
     #[describe("Uninstall Kaspa software")]
     Uninstall,
+    #[describe("Toggle sudo password")]
+    SudoersEntry,
 }
 
 impl Action for Advanced {
@@ -128,6 +130,10 @@ impl Action for Advanced {
                     }
                 }
                 // Ok(true)
+            }
+            Advanced::SudoersEntry => {
+                sudo::toggle_sudoers_entry(ctx).ok();
+                Ok(true)
             }
         }
     }

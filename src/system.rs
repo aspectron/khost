@@ -122,10 +122,10 @@ impl System {
             // fetch the system id from /etc/machine-id
             let mut machine_id = String::new();
             file.read_to_string(&mut machine_id).ok();
-            machine_id
+            machine_id.trim().to_string()
         } else if let Ok(Some(mac)) = mac_address::get_mac_address() {
             // fallback on the mac address
-            mac.to_string()
+            mac.to_string().trim().to_string()
         } else {
             // 🤷
             return None;
