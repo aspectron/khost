@@ -1,10 +1,16 @@
 use crate::imports::*;
 
-pub fn update(ctx: &Context) -> Result<()> {
-    install(ctx)
+pub fn update(ctx: &Context, force: bool) -> Result<()> {
+    install(ctx, force)
 }
 
-pub fn install(ctx: &Context) -> Result<()> {
+pub fn install(ctx: &Context, force: bool) -> Result<()> {
+    if !force && flag::exists("os-update.1") {
+        log::info("OS updated - skipping...")?;
+        rust::update()?;
+        return Ok(());
+    }
+
     log::remark(format!(
         "Upgrading {}...",
         ctx.system
@@ -66,6 +72,8 @@ pub fn install(ctx: &Context) -> Result<()> {
 
         Ok("Prerequisites installed successfully.")
     })?;
+
+    flag::create("os-update.1")?;
 
     rust::update()?;
 

@@ -1,12 +1,12 @@
 pub mod actions;
 pub mod args;
 pub mod base;
-pub mod bootstrap;
 pub mod config;
 pub mod console;
 pub mod content;
 pub mod context;
 pub mod error;
+pub mod flag;
 pub mod folders;
 pub mod fqdn;
 pub mod git;
@@ -56,8 +56,6 @@ fn main() {
     sudo::init(&mut ctx);
 
     let first_run = !ctx.config.bootstrap;
-    // let first_run = true;
-    // bootstrap::check(&mut ctx);
 
     let status = status::detect(&ctx);
     let _ = cliclack::note(format!("kHOST v{}", khost::VERSION), &status);

@@ -26,7 +26,7 @@ impl Action for Bootstrap {
 
                     kaspad::select_networks(ctx)?;
 
-                    bootstrap::run(ctx)?;
+                    base::install(ctx, false)?;
                     ctx.config.bootstrap = true;
                     ctx.config.save()?;
 

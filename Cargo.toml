@@ -2,6 +2,14 @@
 name = "khost"
 version = "0.0.1"
 edition = "2021"
+authors = ["Kaspa developers"]
+license = "MIT OR Apache-2.0"
+include = ["src/**/*.rs", "Cargo.toml", "README.md"]
+repository = "https://github.com/aspectron/khost"
+keywords = ["kaspa"]
+description = """
+Kaspa p2p node deployment automation tool for Linux OS.
+"""
 
 [dependencies]
 

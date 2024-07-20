@@ -1,8 +1,10 @@
 # khost
 
-Kaspa p2p public node management tool.
+Kaspa p2p node deployment automation tool for Linux.
 
-Work in progress - this is not suitable for production use yet.
+This tool is designed to automate deployment of nodes intended for use as a part of the Kaspa public p2p network as well as private network clusters using wRPC.
+
+## Setting up
 
 As root:
 
@@ -22,8 +24,8 @@ khost
 ```
 
 
-If you already have an existing user and rust installed, you can simply run `cargo install khost` and `sudo khost`.
+If you already have an existing user and rust installed, you can simply run `cargo install khost` and then `khost`.
 
 Please note that the user needs to have root privileges to run khost.
 
-IMPORTANT: This tool creates it's own configuration for the kaspad node, as such, any previous configurations should be disabled. If kaspad was running before under the same username, rusty-kaspa data folders will be re-used.
+IMPORTANT: This tool creates it's own configuration for the kaspad node, as such, any previous configurations should be disabled and removed. If kaspad was running before under the same username, rusty-kaspa data folders will be re-used.

@@ -34,7 +34,7 @@ impl Action for Update {
                 Ok(false)
             }
             Update::Os => {
-                base::update(ctx)?;
+                base::update(ctx, true)?;
                 Ok(true)
             }
             Update::RustC => {
