@@ -29,6 +29,7 @@ workflow-utils = "0.14.0"
 # workflow-utils = { git = "git@github.com:workflow-rs/workflow-rs.git" branch="master" }
 
 addr = "0.15.6"
+bytes = "1.6.1"
 cfg-if = "1.0.0"
 chrono = "0.4.38"
 clap = { version = "4.5.8", features = ["derive", "string", "cargo"] }
