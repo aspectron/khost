@@ -24,6 +24,7 @@ pub fn install(ctx: &Context) -> Result<()> {
     let packages = [
         "curl",
         "net-tools",
+        "vnstat",
         "git",
         "build-essential",
         "libssl-dev",

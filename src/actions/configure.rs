@@ -1,3 +1,5 @@
+use std::iter::once;
+
 use crate::imports::*;
 use nginx::prelude::*;
 
@@ -138,12 +140,7 @@ impl Action for Configure {
                 }
 
                 if reconfigure {
-                    step("Rebuilding NGINX configuration...", || {
-                        resolver::reconfigure_nginx(ctx)?;
-                        kaspad::reconfigure_nginx(ctx)?;
-                        nginx::reload()?;
-                        Ok(())
-                    })?;
+                    nginx::reconfigure(ctx)?;
                 }
 
                 Ok(true)
@@ -152,19 +149,15 @@ impl Action for Configure {
                 let configs = ctx
                     .managed_active_services()
                     .into_iter()
-                    .map(|detail| nginx::config_filename(detail.name))
-                    .chain(
-                        ctx.managed_active_services()
-                            .into_iter()
-                            .map(|detail| systemd::service_path(detail.name)),
-                    )
+                    .map(|detail| systemd::service_path(detail.name.as_str()))
+                    .chain(once(nginx::config_filename()))
                     .collect::<Vec<_>>();
 
                 configs.iter().for_each(|path| {
                     if path.exists() {
                         log::info(format!(
                             "{}\n\n{}\n",
-                            path.display(),
+                            style(path.display().to_string()).cyan(),
                             fs::read_to_string(path).unwrap_or_default()
                         ))
                         .unwrap();

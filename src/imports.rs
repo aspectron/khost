@@ -39,6 +39,7 @@ pub use crate::kaspad;
 pub use crate::khost;
 pub use crate::network::{Interface, Network};
 pub use crate::nginx;
+pub use crate::nginx::ProxyConfig;
 pub use crate::resolver;
 pub use crate::result::{Capture, Result};
 pub use crate::rust;

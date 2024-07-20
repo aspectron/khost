@@ -33,6 +33,8 @@ impl Action for Bootstrap {
                     nginx::install(ctx)?;
                     resolver::install(ctx)?;
                     kaspad::install(ctx)?;
+
+                    nginx::reconfigure(ctx)?;
                 }
 
                 Ok(false)

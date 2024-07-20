@@ -25,6 +25,7 @@ impl Action for Advanced {
             Advanced::Back => Ok(false),
             Advanced::Rebuild => {
                 kaspad::reconfigure(ctx, true)?;
+                nginx::reconfigure(ctx)?;
                 Ok(true)
             }
             Advanced::PurgeData => {
@@ -69,6 +70,7 @@ impl Action for Advanced {
                     log::step("Uninstalling Kaspa software")?;
                     resolver::uninstall(ctx)?;
                     kaspad::uninstall(ctx)?;
+                    nginx::remove()?;
                     log::success("Kaspa software uninstalled successfully")?;
                 }
                 Ok(true)

@@ -11,6 +11,8 @@ pub enum Status {
     Resolver,
     #[describe("Nginx status")]
     Nginx,
+    #[describe("Bandwidth usage")]
+    Vnstat,
     #[describe("View service logs")]
     ViewLogs,
     #[describe("Follow service logs")]
@@ -50,7 +52,7 @@ impl Action for Status {
                     log::warning("No active kaspad configurations found")?;
                 } else {
                     for config in kaspad::active_configs(ctx) {
-                        match kaspad::status(config) {
+                        match systemd::status(config) {
                             Ok(status) => {
                                 println!("{}", truncate_to_terminal(status));
                                 println!();
@@ -76,9 +78,15 @@ impl Action for Status {
                 Ok(true)
             }
             Status::Nginx => {
-                let status = nginx::status()?;
+                // let status = nginx::status()?;
+                let status = systemd::status(&ctx.config.nginx)?;
                 println!("{}", truncate_to_terminal(status));
                 println!();
+                Ok(true)
+            }
+            Status::Vnstat => {
+                let stats = cmd!("vnstat", "--days").read()?;
+                log::info(stats)?;
                 Ok(true)
             }
         }

@@ -27,15 +27,38 @@ pub struct Config {
 }
 
 impl Service for Config {
-    fn service_detail(&self) -> ServiceDetail {
-        ServiceDetail::new(
-            "Kaspa RPC resolver",
-            SERVICE_NAME,
-            ServiceKind::Resolver,
-            Some(self.origin.clone()),
-            self.enabled,
-            true,
-        )
+    fn service_title(&self) -> String {
+        "Kaspa RPC resolver".to_string()
+    }
+
+    fn service_name(&self) -> String {
+        SERVICE_NAME.to_string()
+    }
+
+    fn kind(&self) -> ServiceKind {
+        ServiceKind::Resolver
+    }
+
+    fn origin(&self) -> Option<Origin> {
+        Some(self.origin.clone())
+    }
+
+    fn enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn managed(&self) -> bool {
+        true
+    }
+
+    fn proxy_config(&self) -> Option<Vec<ProxyConfig>> {
+        let proxy_kind = ProxyKind::http(8989);
+        let proxy_config = ProxyConfig::new(
+            format!("{} ({})", self.service_title(), self.service_name()),
+            "/",
+            proxy_kind,
+        );
+        Some(vec![proxy_config])
     }
 }
 
@@ -142,11 +165,8 @@ pub fn install(ctx: &mut Context) -> Result<()> {
 
     create_systemd_unit(ctx, config)?;
     systemd::daemon_reload()?;
-    systemd::enable(service_name(config))?;
-    systemd::start(service_name(config))?;
-
-    nginx::create(nginx_config(ctx))?;
-    nginx::reload()?;
+    systemd::enable(config)?;
+    systemd::start(config)?;
 
     Ok(())
 }
@@ -157,15 +177,6 @@ pub fn certs(ctx: &Context) -> Option<Certs> {
         .certs
         .clone()
         .or(ctx.config.nginx.certs())
-}
-
-pub fn nginx_config(ctx: &Context) -> NginxConfig {
-    let config = &ctx.config.resolver;
-    let fqdns = fqdn::get();
-    let server_kind = ServerKind::new(certs(ctx)).with_fqdn(fqdns);
-    let proxy_kind = ProxyKind::http(8989);
-    let proxy_config = ProxyConfig::new("/", proxy_kind);
-    NginxConfig::new(service_name(config), server_kind, vec![proxy_config])
 }
 
 pub fn update(ctx: &Context) -> Result<()> {
@@ -187,19 +198,12 @@ pub fn uninstall(ctx: &mut Context) -> Result<()> {
 
     log::remark("Uninstalling resolver...")?;
 
-    let service_name = service_name(config);
+    let service_name = config.service_name();
 
-    if nginx::exists(&service_name) {
-        nginx::remove(&service_name)?;
-        nginx::reload()?;
-    } else {
-        log::error(format!("Nginx config file '{service_name}' not found"))?;
-    }
-
-    if systemd::exists(&service_name) {
-        systemd::stop(&service_name)?;
-        systemd::disable(&service_name)?;
-        systemd::remove(&service_name)?;
+    if systemd::exists(config) {
+        systemd::stop(config)?;
+        systemd::disable(config)?;
+        systemd::remove(config)?;
     } else {
         log::error(format!("Systemd unit file '{service_name}' not found"))?;
     }
@@ -257,13 +261,7 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
         .chain(args)
         .collect::<Vec<_>>();
 
-    let unit_config = systemd::Config::new(
-        service_name(config),
-        "Kaspa Resolver",
-        &ctx.username,
-        exec_start,
-        5,
-    );
+    let unit_config = systemd::Config::new(config, "Kaspa Resolver", &ctx.username, exec_start, 5);
 
     systemd::create(unit_config)?;
 
@@ -271,13 +269,11 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
 }
 
 pub fn restart(config: &Config) -> Result<()> {
-    step("Restarting resolver...", || {
-        systemd::restart(service_name(config))
-    })
+    step("Restarting resolver...", || systemd::restart(config))
 }
 
 pub fn status(config: &Config) -> Result<String> {
-    systemd::status(service_name(config))
+    systemd::status(config)
 }
 
 pub fn check_for_updates(ctx: &Context) -> Result<()> {
@@ -306,11 +302,6 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
         update(ctx)?;
     }
 
-    Ok(())
-}
-
-pub fn reconfigure_nginx(ctx: &Context) -> Result<()> {
-    nginx::create(nginx_config(ctx))?;
     Ok(())
 }
 

@@ -7,7 +7,7 @@ pub struct Config {
     pub bootstrap: bool,
     pub disable_sudo_prompt: bool,
     pub public: bool,
-    pub fqdn: Option<String>,
+    pub fqdn: Option<Vec<String>>,
     pub ip: Option<String>,
     pub nginx: nginx::Config,
     pub kaspad: Vec<kaspad::Config>,
@@ -115,8 +115,9 @@ the information using this form.
             return Err(Error::custom("Unable to detect public ip :("));
         }
     } else {
-        let fqdn = fqdn("Enter the fully qualified domain name (FQDN):")?;
-        ctx.config.fqdn = Some(fqdn);
+        // TODO: validate space-separated fqdns
+        let fqdns = fqdn("Enter fully qualified domain names (FQDN):")?;
+        ctx.config.fqdn = Some(fqdns.split_whitespace().map(String::from).collect());
     }
     ctx.config.save()?;
     Ok(())

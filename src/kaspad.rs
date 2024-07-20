@@ -21,15 +21,56 @@ pub struct Config {
 }
 
 impl Service for Config {
-    fn service_detail(&self) -> ServiceDetail {
-        ServiceDetail::new(
-            "Kaspa p2p node",
-            format!("kaspa-{}", self.network),
-            ServiceKind::Kaspad(self.network),
-            Some(self.origin.clone()),
-            self.enabled,
-            true,
-        )
+    fn service_title(&self) -> String {
+        "Kaspa p2p node".to_string()
+    }
+
+    fn service_name(&self) -> String {
+        format!("kaspa-{}", self.network)
+    }
+
+    fn kind(&self) -> ServiceKind {
+        ServiceKind::Kaspad(self.network)
+    }
+
+    fn origin(&self) -> Option<Origin> {
+        Some(self.origin.clone())
+    }
+
+    fn enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn managed(&self) -> bool {
+        true
+    }
+
+    fn proxy_config(&self) -> Option<Vec<ProxyConfig>> {
+        let mut proxy_configs = Vec::new();
+
+        if let Some(iface) = self.wrpc_borsh.as_ref() {
+            let port = iface.port();
+            let proxy_kind = ProxyKind::wrpc(port);
+            let proxy_config = ProxyConfig::new(
+                format!("{} ({})", self.service_title(), self.service_name()),
+                format!("/kaspa/{}/wrpc/borsh", self.network),
+                proxy_kind,
+            );
+            proxy_configs.push(proxy_config);
+        }
+
+        if let Some(iface) = self.wrpc_json.as_ref() {
+            let port = iface.port();
+            let proxy_kind = ProxyKind::wrpc(port);
+            let proxy_config = ProxyConfig::new(
+                format!("{} ({})", self.service_title(), self.service_name()),
+                format!("/kaspa/{}/wrpc/json", self.network),
+                proxy_kind,
+            );
+            proxy_configs.push(proxy_config);
+        }
+
+        Some(proxy_configs)
     }
 }
 
@@ -63,7 +104,7 @@ impl Config {
     pub fn data_folder(&self) -> PathBuf {
         self.data_folder
             .clone()
-            .unwrap_or_else(|| home_folder().join(".rusty-kaspa").join(service_name(self)))
+            .unwrap_or_else(|| home_folder().join(".rusty-kaspa").join(self.service_name()))
     }
 
     pub fn network(&self) -> Network {
@@ -145,14 +186,6 @@ pub fn unique_origins(ctx: &Context) -> HashSet<Origin> {
         .collect()
 }
 
-// pub fn active_unique_origins(ctx: &Context) -> HashSet<Origin> {
-//     ctx.config
-//         .kaspad
-//         .iter()
-//         .filter_map(|config| config.enabled.then_some(config.origin.clone()))
-//         .collect()
-// }
-
 pub fn active_configs(ctx: &Context) -> impl Iterator<Item = &Config> {
     ctx.config
         .kaspad
@@ -196,41 +229,12 @@ pub fn is_installed(ctx: &Context) -> bool {
         .all(|origin| binary(origin).exists())
 }
 
-pub fn certs(ctx: &Context, config: &Config) -> Option<Certs> {
-    config.certs.clone().or(ctx.config.nginx.certs())
-}
-
-pub fn nginx_config(ctx: &Context, config: &Config) -> NginxConfig {
-    let fqdns = fqdn::get();
-    let server_kind = ServerKind::new(certs(ctx, config)).with_fqdn(fqdns);
-
-    let mut proxy_configs = Vec::new();
-
-    if let Some(iface) = config.wrpc_borsh.as_ref() {
-        let port = iface.port();
-        let proxy_kind = ProxyKind::wrpc(port);
-        let proxy_config =
-            ProxyConfig::new(format!("/kaspa/{}/wrpc/borsh", config.network), proxy_kind);
-        proxy_configs.push(proxy_config);
-    }
-
-    if let Some(iface) = config.wrpc_json.as_ref() {
-        let port = iface.port();
-        let proxy_kind = ProxyKind::wrpc(port);
-        let proxy_config =
-            ProxyConfig::new(format!("/kaspa/{}/wrpc/json", config.network), proxy_kind);
-        proxy_configs.push(proxy_config);
-    }
-
-    NginxConfig::new(service_name(config), server_kind, proxy_configs)
-}
-
 pub fn update(ctx: &Context) -> Result<()> {
     fetch(ctx)?;
     build(ctx)?;
     step("Restarting Kaspa p2p nodes...", || {
         for config in active_configs(ctx) {
-            restart(config)?;
+            systemd::restart(config)?;
         }
         Ok(())
     })?;
@@ -240,22 +244,15 @@ pub fn update(ctx: &Context) -> Result<()> {
 
 pub fn uninstall(ctx: &Context) -> Result<()> {
     for config in active_configs(ctx) {
-        let service_name = service_name(config);
+        let service_name = config.service_name();
         log::remark(format!("Uninstalling Kaspad p2p node '{service_name}'..."))?;
 
-        if systemd::exists(&service_name) {
-            systemd::stop(&service_name)?;
-            systemd::disable(&service_name)?;
-            systemd::remove(&service_name)?;
+        if systemd::exists(config) {
+            systemd::stop(config)?;
+            systemd::disable(config)?;
+            systemd::remove(config)?;
         } else {
             log::error(format!("Systemd unit file '{service_name}' not found"))?;
-        }
-
-        if nginx::exists(&service_name) {
-            nginx::remove(&service_name)?;
-            nginx::reload()?;
-        } else {
-            log::error(format!("Nginx config file '{service_name}' not found"))?;
         }
     }
 
@@ -352,7 +349,6 @@ pub fn version(origin: &Origin) -> Option<String> {
 }
 
 pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
-    let service_name = service_name(config);
     let description = format!("Kaspad p2p Node ({})", config.network);
 
     let args = Vec::<String>::from(config);
@@ -361,34 +357,10 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
         .chain(args)
         .collect::<Vec<_>>();
 
-    let unit_config = systemd::Config::new(service_name, description, &ctx.username, exec_start, 5);
+    let unit_config = systemd::Config::new(config, description, &ctx.username, exec_start, 5);
 
     systemd::create(unit_config)?;
     Ok(())
-}
-
-pub fn start(config: &Config) -> Result<()> {
-    systemd::start(service_name(config))
-}
-
-pub fn stop(config: &Config) -> Result<()> {
-    systemd::stop(service_name(config))
-}
-
-pub fn restart(config: &Config) -> Result<()> {
-    systemd::restart(service_name(config))
-}
-
-pub fn status(config: &Config) -> Result<String> {
-    systemd::status(service_name(config))
-}
-
-pub fn is_active(config: &Config) -> Result<bool> {
-    systemd::is_active(service_name(config))
-}
-
-pub fn is_enabled(config: &Config) -> Result<bool> {
-    systemd::is_enabled(service_name(config))
 }
 
 pub fn configure_networks(ctx: &mut Context, networks: Vec<Network>) -> Result<()> {
@@ -416,45 +388,33 @@ pub fn configure_networks(ctx: &mut Context, networks: Vec<Network>) -> Result<(
 
 pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
     let mut reconfigure_systemd = false;
-    let mut reconfigure_nginx = false;
 
     log::remark("Updating Kaspa p2p node configuration...")?;
 
     for config in inactive_configs(ctx) {
-        let service_name = service_name(config);
-        if systemd::exists(&service_name) {
-            if systemd::is_active(&service_name)? {
+        let service_name = config.service_name();
+        if systemd::exists(config) {
+            if systemd::is_active(config)? {
                 step(format!("Bringing down '{}'", service_name), || {
-                    systemd::stop(&service_name)
+                    systemd::stop(config)
                 })?;
             }
             step(format!("Removing service '{}'", service_name), || {
-                systemd::disable(&service_name)?;
-                systemd::remove(&service_name)?;
+                systemd::disable(config)?;
+                systemd::remove(config)?;
                 reconfigure_systemd = true;
                 Ok(())
             })?;
         }
-
-        if nginx::exists(&service_name) {
-            nginx::remove(&service_name)?;
-            reconfigure_nginx = true;
-        }
     }
 
     for config in active_configs(ctx) {
-        let service_name = service_name(config);
+        let service_name = config.service_name();
         step(format!("Configuring '{}'", service_name), || {
-            if force || !systemd::exists(&service_name) {
+            if force || !systemd::exists(config) {
                 create_systemd_unit(ctx, config)?;
                 reconfigure_systemd = true;
             }
-
-            if force || !nginx::exists(&service_name) {
-                nginx::create(nginx_config(ctx, config))?;
-                reconfigure_nginx = true;
-            }
-
             Ok(())
         })?;
     }
@@ -463,40 +423,29 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
         step("Reloading systemd daemon...", systemd::daemon_reload)?;
 
         for config in active_configs(ctx) {
-            let service_name = service_name(config);
+            let service_name = config.service_name();
             step(format!("Brining up '{}'", service_name), || {
-                systemd::enable(&service_name)?;
-                systemd::start(&service_name)
+                systemd::enable(config)?;
+                systemd::start(config)
             })?;
         }
     }
 
-    if reconfigure_nginx {
-        nginx::reload()?;
-    }
+    log::success("Kaspa p2p node configuration updated")?;
 
-    log::success("Configuration updated")?;
-
-    Ok(())
-}
-
-pub fn reconfigure_nginx(ctx: &Context) -> Result<()> {
-    for config in active_configs(ctx) {
-        nginx::create(nginx_config(ctx, config))?;
-    }
     Ok(())
 }
 
 pub fn stop_all(ctx: &Context) -> Result<()> {
     for config in active_configs(ctx) {
-        stop(config)?;
+        systemd::stop(config)?;
     }
     Ok(())
 }
 
 pub fn start_all(ctx: &Context) -> Result<()> {
     for config in active_configs(ctx) {
-        start(config)?;
+        systemd::start(config)?;
     }
     Ok(())
 }
@@ -566,7 +515,7 @@ pub fn find_config_by_service_detail<'a>(
     ctx.config
         .kaspad
         .iter_mut()
-        .find(|config| service_name(*config) == detail.name)
+        .find(|config| config.service_name() == detail.name)
 }
 
 pub fn select_networks(ctx: &mut Context) -> Result<()> {
@@ -581,9 +530,9 @@ pub fn select_networks(ctx: &mut Context) -> Result<()> {
             .config
             .kaspad
             .iter()
-            .map(service_detail)
+            .map(Service::service_detail)
             .collect::<Vec<_>>();
-        let selected = active_configs(ctx).next().map(service_detail);
+        let selected = active_configs(ctx).next().map(Service::service_detail);
         if let Some(selected) = selected {
             selector = selector.initial_value(selected);
         }
@@ -600,7 +549,7 @@ pub fn select_networks(ctx: &mut Context) -> Result<()> {
             .config
             .kaspad
             .iter()
-            .map(service_detail)
+            .map(Service::service_detail)
             .collect::<Vec<_>>();
         let enabled = details
             .iter()

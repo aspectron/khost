@@ -53,7 +53,7 @@ pub fn detect(ctx: &Context) -> Status {
         .active_services()
         .into_iter()
         .map(|service| {
-            let status = systemd::unit_state(service_name(&service));
+            let status = systemd::unit_state(&service.name);
             (service, status)
         })
         .collect();

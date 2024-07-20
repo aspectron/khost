@@ -7,7 +7,7 @@ pub enum ServiceKind {
     Nginx,
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct ServiceDetail {
     pub caption: String,
     pub name: String,
@@ -47,22 +47,25 @@ impl Display for ServiceDetail {
     }
 }
 
-impl Service for ServiceDetail {
-    fn service_detail(&self) -> ServiceDetail {
-        self.clone()
-    }
-}
-
 pub trait Service {
-    fn service_detail(&self) -> ServiceDetail;
-}
+    fn service_title(&self) -> String;
+    fn service_name(&self) -> String;
+    fn kind(&self) -> ServiceKind;
+    fn origin(&self) -> Option<Origin>;
+    fn enabled(&self) -> bool;
+    fn managed(&self) -> bool;
+    fn proxy_config(&self) -> Option<Vec<ProxyConfig>>;
 
-pub fn service_name<S: Service>(service: &S) -> String {
-    service.service_detail().name
-}
-
-pub fn service_detail<S: Service>(service: &S) -> ServiceDetail {
-    service.service_detail()
+    fn service_detail(&self) -> ServiceDetail {
+        ServiceDetail::new(
+            self.service_title(),
+            self.service_name(),
+            self.kind(),
+            self.origin(),
+            self.enabled(),
+            self.managed(),
+        )
+    }
 }
 
 pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Result<()> {
@@ -79,8 +82,8 @@ pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Resul
                     resolver::install(ctx)?;
                 }
 
-                if !systemd::is_enabled(service_name(&ctx.config.resolver))? {
-                    systemd::enable(service_name(&ctx.config.resolver))?;
+                if !systemd::is_enabled(&ctx.config.resolver)? {
+                    systemd::enable(&ctx.config.resolver)?;
                 }
             }
             _ => {}
@@ -88,6 +91,7 @@ pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Resul
     }
 
     kaspad::configure_networks(ctx, kaspad_networks)?;
+    nginx::reconfigure(ctx)?;
 
     Ok(())
 }
