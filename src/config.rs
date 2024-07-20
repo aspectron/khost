@@ -90,18 +90,23 @@ pub fn public_network(ctx: &mut Context) -> Result<()> {
     ctx.config.public =
         confirm("Would you like this node to join the Kaspa public node network?").interact()?;
     if ctx.config.public {
-        if let Some(ip) = ctx.config.ip.as_ref() {
+        if let (Some(ip), Some(id)) = (ctx.config.ip.as_ref(), ctx.system.system_id.as_ref()) {
             cliclack::note(
                 "Public Node Network",
                 format!(
                     r#"
 Thank you for contributing to the Kaspa ecosystem!
 
+          Your system id is: {}
 Your public IPv4 address is: {}
 
+Please register your system via the following form:
+-> https://forms.gle/mWemBbwNEjXsFC5F7
 Please reach out to one of the public node maintainers
-on Kaspa Discord to have your node registered.
+on Telegram or Kaspa Discord once you have submitted
+the information using this form.
 "#,
+                    ::console::style(format!("{id:016x}")).yellow(),
                     ::console::style(ip).cyan()
                 ),
             )?;

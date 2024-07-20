@@ -19,8 +19,10 @@ impl Action for Bootstrap {
                     .initial_value(true)
                     .interact()?
                 {
-                    ctx.config.resolver.enabled =
-                        confirm("Would you like to install Kaspa resolver?").interact()?;
+                    if confirm("Would you like to install Kaspa resolver?").interact()? {
+                        ctx.config.resolver.enabled = true;
+                        resolver::init_resolver_config(ctx).ok();
+                    }
 
                     kaspad::select_networks(ctx)?;
 

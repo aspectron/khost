@@ -52,6 +52,12 @@ pub enum Error {
 
     #[error(transparent)]
     TryFromSlice(#[from] std::array::TryFromSliceError),
+
+    #[error("Passwords do not match")]
+    PasswordsDoNotMatch,
+
+    #[error("Resolver key mismatch: expected 0x{0:02x} got 0x{1:02x}")]
+    ResolverKeyPrefix(u16, u16),
 }
 
 impl From<String> for Error {
