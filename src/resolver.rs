@@ -100,7 +100,7 @@ pub fn fetch(origin: &Origin) -> Result<()> {
 }
 
 pub fn binary(origin: &Origin) -> PathBuf {
-    folder(origin).join("target/release/kaspa-resolver")
+    folder(origin).join("target/release/resolver")
 }
 
 pub fn folder(origin: &Origin) -> PathBuf {

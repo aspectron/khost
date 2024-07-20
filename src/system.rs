@@ -115,7 +115,7 @@ impl Default for System {
 
 impl System {
     fn try_system_id_as_u64() -> Option<u64> {
-        Self::try_system_id().and_then(|v| v[0..8].try_into().ok().map(u64::from_le_bytes))
+        Self::try_system_id().and_then(|v| v[0..8].try_into().ok().map(u64::from_be_bytes))
     }
     fn try_system_id() -> Option<Vec<u8>> {
         let some_id = if let Ok(mut file) = std::fs::File::open("/etc/machine-id") {
