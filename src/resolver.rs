@@ -51,7 +51,7 @@ impl Service for Config {
         true
     }
 
-    fn proxy_config(&self) -> Option<Vec<ProxyConfig>> {
+    fn proxy_config(&self, _ctx: &Context) -> Option<Vec<ProxyConfig>> {
         let proxy_kind = ProxyKind::http(8989);
         let proxy_config = ProxyConfig::new(
             format!("{} ({})", self.service_title(), self.service_name()),
@@ -301,6 +301,12 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
     {
         update(ctx)?;
     }
+
+    Ok(())
+}
+
+pub fn reconfigure(_ctx: &Context, _force: bool) -> Result<()> {
+    // let mut reconfigure_systemd = false;
 
     Ok(())
 }

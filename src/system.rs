@@ -134,6 +134,10 @@ impl System {
         sha256.update(some_id.as_bytes());
         Some(sha256.finalize().to_vec())
     }
+
+    pub fn system_id_as_hex(&self) -> String {
+        format!("{:016x}", self.system_id.unwrap_or_default())
+    }
 }
 
 #[derive(Debug)]

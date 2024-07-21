@@ -45,7 +45,7 @@ impl Service for Config {
         true
     }
 
-    fn proxy_config(&self) -> Option<Vec<ProxyConfig>> {
+    fn proxy_config(&self, _ctx: &Context) -> Option<Vec<ProxyConfig>> {
         let mut proxy_configs = Vec::new();
 
         if let Some(iface) = self.wrpc_borsh.as_ref() {
@@ -90,7 +90,7 @@ impl Config {
             data_folder: None,
             enable_upnp: false,
             outgoing_peers: Some(32),
-            max_incoming_peers: Some(1024),
+            max_incoming_peers: Some(256),
             grpc: Some(Interface::Local(grpc)),
             wrpc_borsh: Some(Interface::Local(wrpc_borsh)),
             wrpc_json: Some(Interface::Local(wrpc_json)),

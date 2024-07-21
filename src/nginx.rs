@@ -50,7 +50,7 @@ impl Service for Config {
         false
     }
 
-    fn proxy_config(&self) -> Option<Vec<ProxyConfig>> {
+    fn proxy_config(&self, _ctx: &Context) -> Option<Vec<ProxyConfig>> {
         None
     }
 }
@@ -327,7 +327,7 @@ pub fn remove() -> Result<()> {
 pub fn reconfigure(ctx: &Context) -> Result<()> {
     step("Updating NGINX configuration...", || {
         let server_kind = ServerKind::new(&ctx.config.nginx.certs).with_fqdn(fqdn::get());
-        let proxy_configs = ctx.proxy_configs();
+        let proxy_configs = ctx.proxy_configs(ctx);
         store(NginxConfig::new(server_kind, proxy_configs))?;
         reload()
     })

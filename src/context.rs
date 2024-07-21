@@ -30,14 +30,14 @@ impl Context {
         })
     }
 
-    pub fn proxy_configs(&self) -> Vec<ProxyConfig> {
+    pub fn proxy_configs(&self, ctx: &Context) -> Vec<ProxyConfig> {
         let mut services = self
             .config
             .kaspad
             .iter()
-            .map(|config| config.proxy_config())
+            .map(|config| config.proxy_config(ctx))
             .collect::<Vec<_>>();
-        services.push(self.config.resolver.proxy_config());
+        services.push(self.config.resolver.proxy_config(ctx));
         services.into_iter().flatten().flatten().collect::<Vec<_>>()
     }
 

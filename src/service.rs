@@ -54,7 +54,7 @@ pub trait Service {
     fn origin(&self) -> Option<Origin>;
     fn enabled(&self) -> bool;
     fn managed(&self) -> bool;
-    fn proxy_config(&self) -> Option<Vec<ProxyConfig>>;
+    fn proxy_config(&self, ctx: &Context) -> Option<Vec<ProxyConfig>>;
 
     fn service_detail(&self) -> ServiceDetail {
         ServiceDetail::new(

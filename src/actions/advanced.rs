@@ -5,8 +5,6 @@ use crate::imports::*;
 pub enum Advanced {
     #[describe("Back")]
     Back,
-    #[describe("Rebuild configuration")]
-    Rebuild,
     #[describe("Configure Git")]
     Git,
     #[describe("Full installation")]
@@ -23,11 +21,6 @@ impl Action for Advanced {
     fn main(&self, ctx: &mut Context) -> Result<bool> {
         match self {
             Advanced::Back => Ok(false),
-            Advanced::Rebuild => {
-                kaspad::reconfigure(ctx, true)?;
-                nginx::reconfigure(ctx)?;
-                Ok(true)
-            }
             Advanced::PurgeData => {
                 let mut folders = HashMap::new();
                 for config in ctx.config.kaspad.iter() {

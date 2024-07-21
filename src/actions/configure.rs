@@ -17,6 +17,8 @@ pub enum Configure {
     Enable,
     #[describe("Configure SSL certificates")]
     Tls,
+    #[describe("Rebuild configuration")]
+    Rebuild,
     #[describe("View configuration files")]
     View,
 }
@@ -166,6 +168,12 @@ impl Action for Configure {
                     }
                 });
 
+                Ok(true)
+            }
+            Configure::Rebuild => {
+                kaspad::reconfigure(ctx, true)?;
+                resolver::reconfigure(ctx, true)?;
+                nginx::reconfigure(ctx)?;
                 Ok(true)
             }
         }
