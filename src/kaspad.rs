@@ -536,7 +536,7 @@ pub fn find_config_by_service_detail<'a>(
 }
 
 pub fn select_networks(ctx: &mut Context) -> Result<()> {
-    if ctx.system.total_memory < 15 * 1024 * 1024 * 1024 {
+    if ctx.system.total_memory < 30 * 1024 * 1024 * 1024 {
         log::warning(format!(
             "Detected RAM is {}, minimum required for multiple networks is 32 Gb.",
             as_gb(ctx.system.total_memory as f64, false, false)
