@@ -6,7 +6,6 @@ use nginx::prelude::*;
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
 #[caption = "Configure"]
 pub enum Configure {
-    /// Go back to the previous menu
     #[describe("Back")]
     Back,
     // #[describe("Fail")]
@@ -15,12 +14,18 @@ pub enum Configure {
     // Verbose,
     #[describe("Enable / Disable services")]
     Enable,
-    #[describe("Configure SSL certificates")]
-    Tls,
     #[describe("Rebuild configuration")]
     Rebuild,
+    #[describe("Restart all services")]
+    Restart,
+    // #[describe("Start all services")]
+    // Start,
+    // #[describe("Stop all services")]
+    // Stop,
     #[describe("View configuration files")]
     View,
+    #[describe("Configure SSL certificates")]
+    Tls,
 }
 
 impl Action for Configure {
@@ -176,6 +181,21 @@ impl Action for Configure {
                 nginx::reconfigure(ctx)?;
                 Ok(true)
             }
+            Configure::Restart => {
+                kaspad::restart_all(ctx)?;
+                resolver::restart(ctx)?;
+                nginx::reconfigure(ctx)?;
+                Ok(true)
+            } // Configure::Start => {
+              //     kaspad::start_all(ctx)?;
+              //     resolver::start(ctx)?;
+              //     Ok(true)
+              // }
+              // Configure::Stop => {
+              //     kaspad::stop_all(ctx)?;
+              //     resolver::stop(ctx)?;
+              //     Ok(true)
+              // }
         }
     }
 }

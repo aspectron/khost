@@ -450,6 +450,23 @@ pub fn start_all(ctx: &Context) -> Result<()> {
     Ok(())
 }
 
+pub fn restart_all(ctx: &Context) -> Result<()> {
+    for config in active_configs(ctx) {
+        step(
+            format!(
+                "Restarting {} ({})",
+                config.service_title(),
+                config.service_name()
+            ),
+            || {
+                systemd::restart(config)?;
+                Ok(())
+            },
+        )?;
+    }
+    Ok(())
+}
+
 pub fn purge_data_folder_all(ctx: &Context) -> Result<()> {
     for config in active_configs(ctx) {
         purge_data_folder(config)?;

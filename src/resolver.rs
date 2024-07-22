@@ -188,7 +188,7 @@ pub fn update(ctx: &Context) -> Result<()> {
 
     fetch(&config.origin)?;
     build(&config.origin)?;
-    restart(config)?;
+    restart(ctx)?;
     Ok(())
 }
 
@@ -268,8 +268,18 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
     Ok(())
 }
 
-pub fn restart(config: &Config) -> Result<()> {
-    step("Restarting resolver...", || systemd::restart(config))
+pub fn start(ctx: &Context) -> Result<()> {
+    systemd::start(&ctx.config.resolver)
+}
+
+pub fn stop(ctx: &Context) -> Result<()> {
+    systemd::restart(&ctx.config.resolver)
+}
+
+pub fn restart(ctx: &Context) -> Result<()> {
+    step("Restarting resolver...", || {
+        systemd::restart(&ctx.config.resolver)
+    })
 }
 
 pub fn status(config: &Config) -> Result<String> {

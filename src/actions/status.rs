@@ -1,7 +1,7 @@
 use crate::imports::*;
 
 #[derive(Describe, Eq, PartialEq, Debug, Clone, Copy)]
-#[caption = "Manage"]
+#[caption = "Status"]
 pub enum Status {
     #[describe("Back")]
     Back,

@@ -18,7 +18,7 @@ impl Display for Status {
             self.system
                 .system_id
                 .as_ref()
-                .map(|id| style(format!("{id:x}")).cyan().bright())
+                .map(|id| style(format!("{id:016x}")).cyan().bright())
                 .unwrap_or(style("N/A".to_string()).red().bright()),
         ));
         rows.push(Content::field(
