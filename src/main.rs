@@ -47,6 +47,13 @@ fn main() {
         std::process::exit(1);
     }
 
+    if is_root() {
+        let _ = log::error("kHOST should not be run as root");
+        let _ = outro("Exiting...");
+        println!();
+        std::process::exit(2);
+    }
+
     // Check for updates
     khost::update().ok();
 

@@ -116,7 +116,7 @@ impl Config {
     }
 
     pub fn disable(&mut self) {
-        self.enabled = true;
+        self.enabled = false;
     }
 
     pub fn set_origin(&mut self, origin: Origin) {
@@ -394,7 +394,7 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
     for config in inactive_configs(ctx) {
         let service_name = config.service_name();
         if systemd::exists(config) {
-            if systemd::is_active(config)? {
+            if systemd::is_active(&config.service_name())? {
                 step(format!("Bringing down '{}'", service_name), || {
                     systemd::stop(config)
                 })?;
@@ -536,7 +536,7 @@ pub fn find_config_by_service_detail<'a>(
 }
 
 pub fn select_networks(ctx: &mut Context) -> Result<()> {
-    if ctx.system.total_memory < 17 * 1024 * 1024 * 1024 {
+    if ctx.system.total_memory < 15 * 1024 * 1024 * 1024 {
         log::warning(format!(
             "Detected RAM is {}, minimum required for multiple networks is 32 Gb.",
             as_gb(ctx.system.total_memory as f64, false, false)

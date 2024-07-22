@@ -53,8 +53,19 @@ pub fn detect(ctx: &Context) -> Status {
         .active_services()
         .into_iter()
         .map(|service| {
-            let status = systemd::unit_state(&service.name);
-            (service, status)
+            if service.kind == ServiceKind::Nginx {
+                match systemd::is_enabled(&service.name) {
+                    Ok(true) => {
+                        let status = systemd::unit_state(&service.name);
+                        (service, status)
+                    }
+                    Ok(false) => (service, Err("n/a".to_string())),
+                    Err(e) => (service, Err(e.to_string())),
+                }
+            } else {
+                let status = systemd::unit_state(&service.name);
+                (service, status)
+            }
         })
         .collect();
 

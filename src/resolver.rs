@@ -326,7 +326,10 @@ pub fn reconfigure(ctx: &mut Context, _force: bool) -> Result<()> {
 
     if !resolver::is_installed(ctx) {
         resolver::install(ctx)?;
-    } else if config.enabled() && systemd::is_enabled(config)? && systemd::is_active(config)? {
+    } else if config.enabled()
+        && systemd::is_enabled(&config.service_name())?
+        && systemd::is_active(&config.service_name())?
+    {
         restart(ctx)?;
     } else {
         step("Configuring 'kaspa-resolver'", || {
