@@ -317,13 +317,34 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
     Ok(())
 }
 
-pub fn reconfigure(ctx: &Context, _force: bool) -> Result<()> {
-    step("Configuring 'kaspa-resolver'", || {
-        create_systemd_unit(ctx, &ctx.config.resolver)?;
-        systemd::daemon_reload()?;
-        Ok(())
-    })?;
-    restart(ctx)?;
+pub fn reconfigure(ctx: &mut Context, _force: bool) -> Result<()> {
+    if ctx.config.resolver.enabled() {
+        check_resolver_key(ctx)?;
+    }
+
+    let config = &ctx.config.resolver;
+
+    if !resolver::is_installed(ctx) {
+        resolver::install(ctx)?;
+    } else if config.enabled() && systemd::is_enabled(config)? && systemd::is_active(config)? {
+        restart(ctx)?;
+    } else {
+        step("Configuring 'kaspa-resolver'", || {
+            if config.enabled() {
+                create_systemd_unit(ctx, &ctx.config.resolver)?;
+                systemd::daemon_reload()?;
+                systemd::enable(config)?;
+                systemd::start(config)?;
+            } else {
+                systemd::stop(config)?;
+                systemd::disable(config)?;
+                systemd::remove(config)?;
+                systemd::daemon_reload()?;
+            }
+            Ok(())
+        })?;
+    }
+    // restart(ctx)?;
     Ok(())
 }
 

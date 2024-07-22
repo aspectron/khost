@@ -84,28 +84,12 @@ pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Resul
     if kinds.contains(&ServiceKind::Resolver) {
         ctx.config.resolver.enabled = true;
         ctx.config.save()?;
-
-        if !resolver::is_installed(ctx) {
-            resolver::install(ctx)?;
-        } else {
-            resolver::check_resolver_key(ctx)?;
-        }
-
-        if !systemd::is_enabled(&ctx.config.resolver)? {
-            systemd::daemon_reload()?;
-            systemd::enable(&ctx.config.resolver)?;
-            systemd::start(&ctx.config.resolver)?;
-        }
     } else {
         ctx.config.resolver.enabled = false;
         ctx.config.save()?;
-
-        if systemd::is_enabled(&ctx.config.resolver)? {
-            systemd::stop(&ctx.config.resolver)?;
-            systemd::disable(&ctx.config.resolver)?;
-        }
     }
 
+    resolver::reconfigure(ctx, false)?;
     kaspad::configure_networks(ctx, networks)?;
     nginx::reconfigure(ctx)?;
 
