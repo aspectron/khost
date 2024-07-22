@@ -1,6 +1,6 @@
 use crate::imports::*;
 
-#[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize, Deserialize, Hash)]
 pub enum ServiceKind {
     Kaspad(Network),
     Resolver,
@@ -69,41 +69,42 @@ pub trait Service {
 }
 
 pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Result<()> {
-    let mut kaspad_networks = Vec::new();
+    let kinds = services
+        .iter()
+        .map(|service| service.kind)
+        .collect::<Vec<_>>();
+    let networks = services
+        .iter()
+        .filter_map(|service| match service.kind {
+            ServiceKind::Kaspad(network) => Some(network),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
 
-    let mut resolver_enabled = false;
-    for service in services {
-        match service.kind {
-            ServiceKind::Kaspad(network) => kaspad_networks.push(network),
-            ServiceKind::Resolver => {
-                resolver_enabled = true;
-                ctx.config.resolver.enabled = true;
-                ctx.config.save()?;
+    if kinds.contains(&ServiceKind::Resolver) {
+        ctx.config.resolver.enabled = true;
+        ctx.config.save()?;
 
-                if !resolver::is_installed(ctx) {
-                    resolver::install(ctx)?;
-                }
-
-                if !systemd::is_enabled(&ctx.config.resolver)? {
-                    systemd::daemon_reload()?;
-                    systemd::enable(&ctx.config.resolver)?;
-                    systemd::start(&ctx.config.resolver)?;
-                }
-            }
-            _ => {}
+        if !resolver::is_installed(ctx) {
+            resolver::install(ctx)?;
         }
-    }
 
-    if !resolver_enabled {
+        if !systemd::is_enabled(&ctx.config.resolver)? {
+            systemd::daemon_reload()?;
+            systemd::enable(&ctx.config.resolver)?;
+            systemd::start(&ctx.config.resolver)?;
+        }
+    } else {
         ctx.config.resolver.enabled = false;
         ctx.config.save()?;
+
         if systemd::is_enabled(&ctx.config.resolver)? {
             systemd::stop(&ctx.config.resolver)?;
             systemd::disable(&ctx.config.resolver)?;
         }
     }
 
-    kaspad::configure_networks(ctx, kaspad_networks)?;
+    kaspad::configure_networks(ctx, networks)?;
     nginx::reconfigure(ctx)?;
 
     Ok(())

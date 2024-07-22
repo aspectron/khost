@@ -156,7 +156,9 @@ pub fn install(ctx: &mut Context) -> Result<()> {
         return Ok(());
     }
 
-    log::remark("Installing Kaspa wPRC resolver...")?;
+    check_resolver_key(ctx)?;
+
+    log::remark("Installing 'kaspa-resolver'")?;
 
     let config = &ctx.config.resolver;
 
@@ -347,6 +349,10 @@ fn resolver_config_file(version: usize) -> String {
     format!("resolver.{version}.bin")
 }
 
+fn key_exists() -> bool {
+    resolver_config_folder().join(key_file()).exists()
+}
+
 fn load_key() -> Result<Secret> {
     Ok(Secret::from(fs::read(
         resolver_config_folder().join(key_file()),
@@ -390,6 +396,13 @@ pub fn update_resolver_config() {
     while update_resolver_config_version(version, &key).is_ok() {
         version += 1;
     }
+}
+
+pub fn check_resolver_key(ctx: &mut Context) -> Result<()> {
+    if !key_exists() {
+        init_resolver_config(ctx)?;
+    }
+    Ok(())
 }
 
 pub fn init_resolver_config(ctx: &mut Context) -> Result<()> {
