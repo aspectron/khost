@@ -71,10 +71,12 @@ pub trait Service {
 pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Result<()> {
     let mut kaspad_networks = Vec::new();
 
+    let mut resolver_enabled = false;
     for service in services {
         match service.kind {
             ServiceKind::Kaspad(network) => kaspad_networks.push(network),
             ServiceKind::Resolver => {
+                resolver_enabled = true;
                 ctx.config.resolver.enabled = true;
                 ctx.config.save()?;
 
@@ -89,6 +91,15 @@ pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Resul
                 }
             }
             _ => {}
+        }
+    }
+
+    if !resolver_enabled {
+        ctx.config.resolver.enabled = false;
+        ctx.config.save()?;
+        if systemd::is_enabled(&ctx.config.resolver)? {
+            systemd::stop(&ctx.config.resolver)?;
+            systemd::disable(&ctx.config.resolver)?;
         }
     }
 
