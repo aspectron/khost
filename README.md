@@ -13,6 +13,7 @@ As `root`:
 
 ```bash
 sudo -s
+apt install -y curl build-essential pkg-config libssl-dev
 adduser -q kaspa
 adduser kaspa sudo
 login kaspa
