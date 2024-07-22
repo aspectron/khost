@@ -54,7 +54,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Run cargo clippy
-        run: cargo clippy --workspace --tests --benches -- -D warnings
+        run: cargo clippy --tests --benches -- -D warnings
 
   test:
     name: Test Suite
