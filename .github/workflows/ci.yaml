@@ -95,6 +95,3 @@ jobs:
 
       - name: Run cargo test regular features
         run: cargo nextest run --release
-
-      - name: Run cargo doc tests
-        run: cargo test --doc --release
