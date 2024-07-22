@@ -87,6 +87,8 @@ pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Resul
 
         if !resolver::is_installed(ctx) {
             resolver::install(ctx)?;
+        } else {
+            resolver::check_resolver_key(ctx)?;
         }
 
         if !systemd::is_enabled(&ctx.config.resolver)? {
