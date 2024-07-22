@@ -381,6 +381,8 @@ fn load_key() -> Result<Secret> {
 }
 
 pub fn update_resolver_config_version(version: usize, key: &Secret) -> Result<()> {
+    ensure_resolver_config_folder()?;
+
     let data = reqwest::blocking::get(format!(
         "https://raw.githubusercontent.com/aspectron/kaspa-resolver/master/data/{}",
         resolver_config_file(version)
@@ -427,6 +429,8 @@ pub fn check_resolver_key(ctx: &mut Context) -> Result<()> {
 }
 
 pub fn init_resolver_config(ctx: &mut Context) -> Result<()> {
+    ensure_resolver_config_folder()?;
+
     if !ctx.config.resolver.enabled {
         log::warning("Resolver service is not enabled, please enable it.")?;
         return Ok(());
