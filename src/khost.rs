@@ -16,7 +16,7 @@ pub fn is_cargo_install() -> bool {
 
 pub fn update() -> Result<()> {
     if is_cargo_install() {
-        if let Ok(latest_version) = version::blocking::latest_crate_version("khost") {
+        if let Ok(latest_version) = version::blocking::latest_crate_version("khost", "khost") {
             if latest_version.is_greater_than(version()) {
                 log::warning(format!("New version of khost@{latest_version} detected"))?;
                 if confirm("Would you like to update?")

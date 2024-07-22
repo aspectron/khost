@@ -481,12 +481,12 @@ pub fn generate_key(prefix: Option<u16>) -> Result<()> {
 
                 if let Some(supplied_prefix) = prefix {
                     let generated_prefix =
-                        u16::from_be_bytes(key.as_bytes()[0..2].try_into().unwrap());
+                        u16::from_be_bytes(key.as_slice()[0..2].try_into().unwrap());
                     if supplied_prefix != generated_prefix {
                         return Err(Error::custom("Resolver key prefix mismatch: expected {supplied_prefix:04x} got {generated_prefix:04x}"));
                     }
                 }
-                fs::write(resolver_config_folder().join(key_file()), key.as_bytes())?;
+                fs::write(resolver_config_folder().join(key_file()), key.as_slice())?;
                 cliclack::outro("Key generated successfully")?;
                 println!();
             }

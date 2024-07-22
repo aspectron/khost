@@ -176,9 +176,9 @@ dependencies = [
 
 [[package]]
 name = "async-executor"
-version = "1.12.0"
+version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8828ec6e544c02b0d6691d21ed9f9218d0384a82542855073c2a3f58304aaf0"
+checksum = "d7ebdfa2ebdab6b1760375fa7d6f382b9f486eac35fc994625a00e89280bdbb7"
 dependencies = [
  "async-task",
  "concurrent-queue",
@@ -3341,9 +3341,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-core"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d889e6327e09b88827953e6bc6b13cb883b2b19b04185c75a6a05eede517fb1e"
+checksum = "435deca3aa42b8d1d7291c715a7bce642b1a739b5185301583f03df0d1b07153"
 dependencies = [
  "async-channel 2.3.1",
  "async-std",
@@ -3373,9 +3373,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-core-macros"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fba00e4a92112229e904826d366b4f518068be9c6a7f7c2d3f9f847ec917cf6b"
+checksum = "25c5038d09456bd035ba50141cf1561dd20e9bbb71a09d500aec19087197a163"
 dependencies = [
  "convert_case",
  "parse-variants",
@@ -3390,9 +3390,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-encryption"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28c8cc8ac3d74c134fc45cad9edd24a689f91f26b94dcc505a238b7056a16666"
+checksum = "cf3dc55090a7041b88c11c2a020543791b29ab780a62b6288b13a9f74c32a492"
 dependencies = [
  "argon2",
  "borsh",
@@ -3407,9 +3407,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-http"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb140b523579932d9233a73f7574d73a8e09f5e719cdb7121137116ef82820ac"
+checksum = "e3611c28cecb0702186a1fe203a755a6230b996aa3ce31e2d47a624da40d5c7b"
 dependencies = [
  "cfg-if",
  "reqwest",
@@ -3423,9 +3423,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-log"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43b383ae3a35a179259b67b5e57ff80f545a86472c56c538ba7ee64934426906"
+checksum = "325b15c8334711300005d9cd6210088e734648e7c9d5945d7d781123479636f1"
 dependencies = [
  "cfg-if",
  "console",
@@ -3439,9 +3439,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-macro-tools"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "059b3f3d8acfd2863ccebbd18096166ba45391f69f3825014968ea92bd96a9df"
+checksum = "03365620b45f09dfbb17b2ee79d8f24adccf7b70661f8fa177fd94369785d6d3"
 dependencies = [
  "convert_case",
  "parse-variants",
@@ -3452,9 +3452,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-serializer"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7a489dfd457e5128c7342efaee4d95479cb91bba3850b8138f6a2c1bc5ac8b3"
+checksum = "05f373b7962b8c08133606d21a1c15b22944960d742fb187409485bf05a80a6d"
 dependencies = [
  "ahash",
  "borsh",
@@ -3463,9 +3463,9 @@ dependencies = [
 
 [[package]]
 name = "workflow-utils"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16ced3c86db431b2e305ba84bbcdd3e7720b049cdd4d11fc9aec96eaeab7ad4b"
+checksum = "699729dc0d181602fa55444844069db4c9c973cde4515566cbfaf987ce362a20"
 dependencies = [
  "ahash",
  "cliclack",
