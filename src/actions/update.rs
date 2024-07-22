@@ -5,16 +5,16 @@ use crate::imports::*;
 pub enum Update {
     #[describe("Back")]
     Back,
-    #[describe("Update Kaspa services")]
+    #[describe("Update all Kaspa services")]
     Services,
     #[describe("OS prerequisites")]
     Os,
     #[describe("Rust Compiler")]
     RustC,
-    #[describe("Resolver")]
-    Resolver,
     #[describe("Kaspa p2p node")]
     Kaspad,
+    #[describe("Resolver")]
+    Resolver,
 }
 
 impl Action for Update {

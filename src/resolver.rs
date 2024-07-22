@@ -277,7 +277,7 @@ pub fn stop(ctx: &Context) -> Result<()> {
 }
 
 pub fn restart(ctx: &Context) -> Result<()> {
-    step("Restarting resolver...", || {
+    step("Restarting 'kaspa-resolver'", || {
         systemd::restart(&ctx.config.resolver)
     })
 }
@@ -315,9 +315,13 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
     Ok(())
 }
 
-pub fn reconfigure(_ctx: &Context, _force: bool) -> Result<()> {
-    // let mut reconfigure_systemd = false;
-
+pub fn reconfigure(ctx: &Context, _force: bool) -> Result<()> {
+    step("Configuring 'kaspa-resolver'", || {
+        create_systemd_unit(ctx, &ctx.config.resolver)?;
+        systemd::daemon_reload()?;
+        Ok(())
+    })?;
+    restart(ctx)?;
     Ok(())
 }
 
@@ -426,8 +430,8 @@ pub fn generate_key(prefix: Option<u16>) -> Result<()> {
         return Ok(());
     }
 
-    match cliclack::password("Enter password:").interact() {
-        Ok(password1) => match cliclack::password("Enter password:").interact() {
+    match cliclack::password("Enter passphrase:").interact() {
+        Ok(password1) => match cliclack::password("Enter passphrase:").interact() {
             Ok(password2) => {
                 if password1 != password2 {
                     return Err(Error::PasswordsDoNotMatch);

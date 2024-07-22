@@ -15,6 +15,8 @@ pub enum Advanced {
     Uninstall,
     #[describe("Toggle sudo password")]
     SudoersEntry,
+    #[describe("Generate resolver key")]
+    ResolverKey,
 }
 
 impl Action for Advanced {
@@ -128,6 +130,10 @@ impl Action for Advanced {
             }
             Advanced::SudoersEntry => {
                 sudo::toggle_sudoers_entry(ctx).ok();
+                Ok(true)
+            }
+            Advanced::ResolverKey => {
+                resolver::init_resolver_config(ctx)?;
                 Ok(true)
             }
         }
