@@ -47,6 +47,8 @@ pub mod fs {
     {
         let temp = temp_folder().join("temp.txt");
         fs::write(&temp, content)?;
+        sudo!("chown", "root:root", &temp).run()?;
+        sudo!("chmod", "644", &temp).run()?;
         sudo!("mv", "-f", temp, path.as_ref()).run()?;
         Ok(())
     }
