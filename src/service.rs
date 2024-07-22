@@ -83,7 +83,9 @@ pub fn enable_services(ctx: &mut Context, services: Vec<ServiceDetail>) -> Resul
                 }
 
                 if !systemd::is_enabled(&ctx.config.resolver)? {
+                    systemd::daemon_reload()?;
                     systemd::enable(&ctx.config.resolver)?;
+                    systemd::start(&ctx.config.resolver)?;
                 }
             }
             _ => {}

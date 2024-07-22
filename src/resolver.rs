@@ -106,7 +106,7 @@ impl From<&Config> for Vec<String> {
         let mut args = Arglist::default();
 
         if config.stats {
-            args.push("--stats");
+            args.push("--status");
         }
 
         if let Some(interface) = config.http.as_ref() {
