@@ -100,7 +100,7 @@ impl Conflict {
     }
 }
 
-pub fn conflicts(_ctx: &Context, _status: &Status) {
+pub fn conflicts(ctx: &Context, _status: &Status) {
     use sysinfo::*;
 
     let mut system = System::new();
@@ -140,6 +140,24 @@ pub fn conflicts(_ctx: &Context, _status: &Status) {
         outro("Unable to continue until conflicts are resolved.").ok();
         println!();
         std::process::exit(1);
+    }
+
+    let networks = ctx
+        .config
+        .kaspad
+        .iter()
+        .map(Service::enabled)
+        .filter(|enabled| *enabled)
+        .collect::<Vec<_>>()
+        .len();
+
+    if !kaspad::supports_multiple_networks(ctx, networks) {
+        log::error(format!(
+            "Detected RAM of {} is insufficient for {} networks!",
+            as_gb(ctx.system.total_memory as f64, false, false),
+            networks
+        ))
+        .ok();
     }
 
     rust::check().ok();

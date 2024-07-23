@@ -363,15 +363,29 @@ pub fn create_systemd_unit(ctx: &Context, config: &Config) -> Result<()> {
     Ok(())
 }
 
+pub fn supports_multiple_networks(ctx: &Context, networks: usize) -> bool {
+    // 16+14+12; 16+12
+    let limits = [(3, 40), (2, 30)].iter();
+    for (nodes, limit) in limits {
+        if networks >= *nodes && ctx.system.ram_as_gb() <= (*limit - 2) {
+            return false;
+        }
+    }
+
+    true
+}
+
 pub fn configure_networks(ctx: &mut Context, networks: Vec<Network>) -> Result<()> {
     let networks = networks.into_iter().collect::<HashSet<_>>();
-    if networks.len() > 1 && ctx.system.ram_as_gb() < 17 {
-        log::warning(format!(
-            "Detected RAM is {}, minimum required for multiple networks is 32 Gb.",
-            as_gb(ctx.system.total_memory as f64, false, false)
-        ))?;
-        if !confirm("Continue with multiple network setup?").interact()? {
-            log::warning("Aborting...")?;
+    let limits = [(3, 42), (2, 32)].iter();
+    for (nodes, limit) in limits {
+        if networks.len() >= *nodes && ctx.system.ram_as_gb() <= (*limit - 2) {
+            log::error(format!(
+                "Detected RAM is {}, minimum required for {} networks is {} Gb. Aborting...",
+                nodes,
+                as_gb(ctx.system.total_memory as f64, false, false),
+                *limit
+            ))?;
             return Ok(());
         }
     }
@@ -536,7 +550,7 @@ pub fn find_config_by_service_detail<'a>(
 }
 
 pub fn select_networks(ctx: &mut Context) -> Result<()> {
-    if ctx.system.total_memory < 30 * 1024 * 1024 * 1024 {
+    if ctx.system.ram_as_gb() < 24 {
         log::warning(format!(
             "Detected RAM is {}, minimum required for multiple networks is 32 Gb.",
             as_gb(ctx.system.total_memory as f64, false, false)
@@ -581,11 +595,21 @@ pub fn select_networks(ctx: &mut Context) -> Result<()> {
             selector = selector.item(detail.clone(), detail, "");
         }
         let selected = selector.interact()?;
+
+        if !supports_multiple_networks(ctx, selected.len()) {
+            log::error(format!(
+                "Detected RAM of {} is insufficient for {} networks",
+                as_gb(ctx.system.total_memory as f64, false, false),
+                selected.len()
+            ))?;
+            if !confirm("Do you want to proceed?").interact()? {
+                return Err(Error::UserAbort);
+            }
+        }
+
         ctx.config.kaspad.iter_mut().for_each(Config::disable);
-        for detail in selected {
-            find_config_by_service_detail(ctx, &detail)
-                .unwrap()
-                .enable();
+        for detail in selected.iter() {
+            find_config_by_service_detail(ctx, detail).unwrap().enable();
         }
     }
     Ok(())
