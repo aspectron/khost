@@ -74,14 +74,14 @@ pub fn status<S: Service>(service: &S) -> Result<String> {
     sudo!("systemctl", "status", service.service_name()).read()
 }
 
-pub fn is_active<S: Display>(service: &S) -> Result<bool> {
+pub fn is_active<S: Display>(service: S) -> Result<bool> {
     let output = sudo!("systemctl", "is-active", service.to_string())
         .unchecked()
         .read()?;
     Ok(output.trim() == "active")
 }
 
-pub fn is_enabled<S: Display>(service: &S) -> Result<bool> {
+pub fn is_enabled<S: Display>(service: S) -> Result<bool> {
     let output = sudo!("systemctl", "is-enabled", service.to_string())
         .unchecked()
         .read()?;

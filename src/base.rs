@@ -11,6 +11,15 @@ pub fn install(ctx: &Context, force: bool) -> Result<()> {
         return Ok(());
     }
 
+    if systemd::is_active("apache2").unwrap_or(false) {
+        log::warning("Detected conflicting apache2 service.")?;
+        step("Stopping apache2...", || {
+            sudo!("systemctl", "stop", "apache2").unchecked().run()?;
+            sudo!("systemctl", "disable", "apache2").unchecked().run()?;
+            Ok(())
+        })?;
+    }
+
     log::remark(format!(
         "Upgrading {}...",
         ctx.system
