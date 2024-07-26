@@ -27,7 +27,10 @@ impl Action for Status {
                 log::info("Please note: you will need to restart khost after following logs.\nPress Ctrl+C to stop following logs")?;
                 match ctx.select_active_service("Select service to follow logs") {
                     Ok(detail) => {
-                        sudo!("journalctl", "-fu", detail.name).inner().run()?;
+                        sudo!("journalctl", "-fu", detail.name)
+                            .inner()
+                            .unchecked()
+                            .run()?;
                     }
                     Err(_) => {
                         println!();
@@ -38,7 +41,10 @@ impl Action for Status {
             Status::ViewLogs => {
                 match ctx.select_active_service("Select service to view logs") {
                     Ok(detail) => {
-                        sudo!("journalctl", "-u", detail.name).inner().run()?;
+                        sudo!("journalctl", "-u", detail.name)
+                            .inner()
+                            .unchecked()
+                            .run()?;
                     }
                     Err(_) => {
                         println!();
