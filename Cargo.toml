@@ -1,6 +1,6 @@
 [package]
 name = "khost"
-version = "0.0.8"
+version = "0.0.9"
 edition = "2021"
 authors = ["Kaspa developers"]
 license = "MIT OR Apache-2.0"
@@ -54,3 +54,4 @@ thiserror = "1.0.61"
 tokio = { version = "1.38.0", default-features = false, features = ['io-util','time','sync','macros','rt','rt-multi-thread'] }
 toml = "0.8.14"
 whoami = "1.5.1"
+xxhash-rust = { version = "0.8.7", features = ["xxh3"] }

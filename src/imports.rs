@@ -15,12 +15,12 @@ pub use std::str::FromStr;
 pub use std::sync::atomic::{AtomicBool, Ordering};
 pub use std::sync::Arc;
 pub use std::sync::OnceLock;
+pub use xxhash_rust::xxh3::xxh3_64;
 
 pub use workflow_core::enums::Describe;
 pub use workflow_core::runtime;
 pub use workflow_encryption::prelude::*;
 pub use workflow_serializer::prelude::*;
-
 pub use workflow_utils::prelude::{arglist::*, format::*, ip, version};
 
 pub use crate::actions;
