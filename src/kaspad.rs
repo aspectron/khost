@@ -408,7 +408,7 @@ pub fn reconfigure(ctx: &Context, force: bool) -> Result<()> {
     for config in inactive_configs(ctx) {
         let service_name = config.service_name();
         if systemd::exists(config) {
-            if systemd::is_active(&config.service_name())? {
+            if systemd::is_active(config.service_name())? {
                 step(format!("Bringing down '{}'", service_name), || {
                     systemd::stop(config)
                 })?;
