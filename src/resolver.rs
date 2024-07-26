@@ -105,10 +105,6 @@ impl From<&Config> for Vec<String> {
     fn from(config: &Config) -> Self {
         let mut args = Arglist::default();
 
-        if config.stats {
-            args.push("--status");
-        }
-
         if let Some(interface) = config.http.as_ref() {
             args.push(format!("--listen={interface}"));
         }
@@ -369,12 +365,16 @@ fn key_file() -> String {
     ".key".to_string()
 }
 
+fn key64_file() -> String {
+    ".key64".to_string()
+}
+
 fn resolver_config_file(version: usize) -> String {
     format!("resolver.{version}.bin")
 }
 
 fn key_exists() -> bool {
-    resolver_config_folder().join(key_file()).exists()
+    resolver_config_folder().join(key64_file()).exists()
 }
 
 fn load_key() -> Result<Secret> {
@@ -486,7 +486,12 @@ pub fn generate_key(prefix: Option<u16>) -> Result<()> {
                         return Err(Error::custom("Resolver key prefix mismatch: expected {supplied_prefix:04x} got {generated_prefix:04x}"));
                     }
                 }
+
                 fs::write(resolver_config_folder().join(key_file()), key.as_slice())?;
+
+                let key64 = xxh3_64(password1.as_bytes()).to_be_bytes();
+                fs::write(resolver_config_folder().join(key64_file()), key64)?;
+
                 cliclack::outro("Key generated successfully")?;
                 println!();
             }
