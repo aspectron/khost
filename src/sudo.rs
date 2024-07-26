@@ -80,7 +80,7 @@ pub fn create_sudoers_entry(ctx: &Context) -> Result<()> {
             sudoers_entry_path.display()
         ))?;
     } else {
-        let config = format!("{} ALL=ALL NOPASSWD: ALL\n", ctx.username);
+        let config = format!("{} ALL=(ALL) NOPASSWD: ALL\n", ctx.username);
         fs::write(&sudoers_entry_path, config)?;
     }
     Ok(())
