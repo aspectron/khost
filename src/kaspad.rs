@@ -6,6 +6,8 @@ pub struct Config {
     enabled: bool,
     #[serde(default)]
     certs: Option<Certs>,
+    #[serde(default)]
+    perf_metrics_log: bool,
     origin: Origin,
     network: Network,
     data_folder: Option<PathBuf>,
@@ -85,6 +87,7 @@ impl Config {
         Self {
             enabled: false,
             certs: None,
+            perf_metrics_log: false,
             origin,
             network,
             data_folder: None,
@@ -144,7 +147,10 @@ impl From<&Config> for Vec<String> {
         args.push("--perf-metrics");
         args.push("--perf-metrics-interval-sec=1");
         args.push("--utxoindex");
-        args.push("--loglevel=info,kaspad_lib::daemon=trace ");
+
+        if config.perf_metrics_log {
+            args.push("--loglevel=info,kaspad_lib::daemon=trace ");
+        }
 
         if !config.enable_upnp {
             args.push("--disable-upnp");
