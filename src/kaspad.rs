@@ -382,8 +382,8 @@ pub fn configure_networks(ctx: &mut Context, networks: Vec<Network>) -> Result<(
         if networks.len() >= *nodes && ctx.system.ram_as_gb() <= (*limit - 2) {
             log::error(format!(
                 "Detected RAM is {}, minimum required for {} networks is {} Gb. Aborting...",
-                nodes,
                 as_gb(ctx.system.total_memory as f64, false, false),
+                nodes,
                 *limit
             ))?;
             return Ok(());

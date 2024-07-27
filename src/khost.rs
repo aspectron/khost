@@ -26,7 +26,8 @@ pub fn update() -> Result<()> {
                     log::info(format!("Updating khost to {latest_version}"))?;
                     cmd!("cargo", "install", format!("khost@{latest_version}")).run()?;
                     log::success(format!("khost updated to {latest_version}"))?;
-                    log::info("Starting new version...")?;
+                    log::info("(if khost exits, please restart it)")?;
+                    outro("Starting new version...")?;
                     println!();
                     surrender();
                 }
@@ -38,6 +39,7 @@ pub fn update() -> Result<()> {
 }
 
 pub fn surrender() {
-    let _ = cmd!("khost").run();
+    let current_exe = std::env::current_exe().unwrap();
+    let _ = duct::cmd!(current_exe).run();
     std::process::exit(0);
 }
