@@ -277,6 +277,10 @@ pub fn stop(ctx: &Context) -> Result<()> {
 }
 
 pub fn restart(ctx: &Context) -> Result<()> {
+    let config = &ctx.config.resolver;
+    if !config.enabled() {
+        return Ok(());
+    }
     step("Restarting 'kaspa-resolver'", || {
         systemd::restart(&ctx.config.resolver)
     })
