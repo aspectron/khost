@@ -12,6 +12,7 @@ pub struct Config {
     network: Network,
     data_folder: Option<PathBuf>,
     enable_upnp: bool,
+    #[serde(default)]
     archival: bool,
     outgoing_peers: Option<u16>,
     max_incoming_peers: Option<u16>,
