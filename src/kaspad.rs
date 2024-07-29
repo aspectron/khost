@@ -12,6 +12,7 @@ pub struct Config {
     network: Network,
     data_folder: Option<PathBuf>,
     enable_upnp: bool,
+    archival: bool,
     outgoing_peers: Option<u16>,
     max_incoming_peers: Option<u16>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -92,6 +93,7 @@ impl Config {
             network,
             data_folder: None,
             enable_upnp: false,
+            archival: false,
             outgoing_peers: Some(32),
             max_incoming_peers: Some(256),
             grpc: Some(Interface::Local(grpc)),
@@ -154,6 +156,10 @@ impl From<&Config> for Vec<String> {
 
         if !config.enable_upnp {
             args.push("--disable-upnp");
+        }
+
+        if config.archival {
+            args.push("--archival");
         }
 
         if let Some(outgoing_peers) = config.outgoing_peers {
