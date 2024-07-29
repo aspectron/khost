@@ -109,6 +109,8 @@ impl From<&Config> for Vec<String> {
             args.push(format!("--listen={interface}"));
         }
 
+        args.push("--auto-update");
+
         args.into()
     }
 }
