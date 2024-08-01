@@ -132,7 +132,9 @@ impl From<&Config> for Vec<String> {
         let mut args = Arglist::default();
 
         match config.network {
-            Network::Mainnet => {}
+            Network::Mainnet => {
+                args.push("--connect=38.242.201.109");
+            }
             Network::Testnet10 => {
                 args.push("--testnet");
                 args.push("--netsuffix=10");
