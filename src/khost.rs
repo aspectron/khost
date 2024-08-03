@@ -2,6 +2,8 @@ use crate::imports::*;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+const CONFIGURATION_REBUILD_REQUIRED: bool = true;
+
 pub fn binary() -> Result<PathBuf> {
     Ok(std::env::current_exe()?)
 }
@@ -33,6 +35,31 @@ pub fn update() -> Result<()> {
                 }
             }
         }
+    }
+
+    Ok(())
+}
+
+pub fn reconfigure_if_needed(ctx: &mut Context, _services_updated: bool) -> Result<()> {
+    let version_file = data_folder().join("version");
+    let rebuild = if !version_file.exists() {
+        fs::write(version_file, VERSION)?;
+        CONFIGURATION_REBUILD_REQUIRED
+    } else {
+        let current_version = fs::read_to_string(&version_file)?;
+        if current_version != VERSION {
+            fs::write(version_file, VERSION)?;
+            CONFIGURATION_REBUILD_REQUIRED
+        } else {
+            false
+        }
+    };
+
+    if rebuild {
+        log::warning("Service configuration rebuild is required...")?;
+        kaspad::reconfigure(ctx, true)?;
+        resolver::reconfigure(ctx, true)?;
+        nginx::reconfigure(ctx)?;
     }
 
     Ok(())

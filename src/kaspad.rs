@@ -511,7 +511,7 @@ pub fn purge_data_folder(config: &Config) -> Result<()> {
     )
 }
 
-pub fn check_for_updates(ctx: &Context) -> Result<()> {
+pub fn check_for_updates(ctx: &Context) -> Result<bool> {
     let mut updates = Vec::new();
     for origin in unique_origins(ctx) {
         let path = folder(&origin);
@@ -532,9 +532,10 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
             .interact()?
     {
         update(ctx)?;
+        Ok(true)
+    } else {
+        Ok(false)
     }
-
-    Ok(())
 }
 
 pub fn find_config_by_network<'a>(
