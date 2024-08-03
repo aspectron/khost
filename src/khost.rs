@@ -18,14 +18,15 @@ pub fn update() -> Result<()> {
     if is_cargo_install() {
         if let Ok(latest_version) = version::blocking::latest_crate_version("khost", "khost") {
             if latest_version.is_greater_than(version()) {
-                log::warning(format!("New version of khost@{latest_version} detected"))?;
+                log::warning(format!("New version of kHOST@{latest_version} detected"))?;
                 if confirm("Would you like to update?")
                     .initial_value(true)
                     .interact()?
                 {
-                    log::info(format!("Updating khost to {latest_version}"))?;
-                    cmd!("cargo", "install", format!("khost@{latest_version}")).run()?;
-                    log::success(format!("khost updated to {latest_version}"))?;
+                    step(format!("Updating kHOST to {latest_version}"), || {
+                        cmd!("cargo", "install", format!("khost@{latest_version}")).run()
+                    })?;
+                    log::success(format!("kHOST updated to {latest_version}"))?;
                     log::info("(if khost exits, please restart it)")?;
                     outro("Starting new version...")?;
                     println!();
@@ -39,7 +40,6 @@ pub fn update() -> Result<()> {
 }
 
 pub fn surrender() {
-    let current_exe = std::env::current_exe().unwrap();
-    let _ = duct::cmd!(current_exe).run();
+    let _ = duct::cmd!("khost").run();
     std::process::exit(0);
 }
