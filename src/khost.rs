@@ -27,7 +27,6 @@ pub fn update() -> Result<()> {
                         cmd!("cargo", "install", format!("khost@{latest_version}")).run()
                     })?;
                     log::success(format!("kHOST updated to {latest_version}"))?;
-                    log::info("(if khost exits, please restart it)")?;
                     outro("Starting new version...")?;
                     println!();
                     surrender();
