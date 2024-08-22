@@ -27,13 +27,14 @@ impl Action for Advanced {
                 let mut folders = HashMap::new();
                 for config in ctx.config.kaspad.iter() {
                     let data_folder = config.data_folder();
-                    println!("Checking folder: {:?}", data_folder.display());
+                    // println!("Checking folder: {:?}", data_folder.display());
                     if data_folder.exists() {
-                        println!("Folder exists: {:?}", data_folder.display());
-                        let info = cmd!("du", "-h", "-s", &data_folder).read()?;
-                        folders.insert(info, (config.network(), data_folder));
+                        // println!("Folder exists: {:?}", data_folder.display());
+                        if let Ok(info) = cmd!("du", "-h", "-s", &data_folder).read() {
+                            folders.insert(info, (config.network(), data_folder));
+                        }
                     } else {
-                        println!("Folder does not exist: {:?}", data_folder.display());
+                        // println!("Folder does not exist: {:?}", data_folder.display());
                     }
                 }
 

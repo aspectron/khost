@@ -1,6 +1,6 @@
 [package]
 name = "khost"
-version = "0.0.15"
+version = "0.1.0"
 edition = "2021"
 authors = ["Kaspa developers"]
 license = "MIT OR Apache-2.0"
@@ -18,10 +18,10 @@ Kaspa p2p node deployment automation tool for Linux OS.
 # workflow-serializer = { path = "../workflow-rs/serializer"}
 # workflow-utils = { path = "../workflow-rs/utils"}
 
-workflow-core = "0.15.0"
-workflow-encryption = "0.15.0"
-workflow-serializer = "0.15.0"
-workflow-utils = "0.15.0"
+workflow-core = "0.17.0"
+workflow-encryption = "0.17.0"
+workflow-serializer = "0.17.0"
+workflow-utils = "0.17.0"
 
 # workflow-encryption = { git = "git@github.com:workflow-rs/workflow-rs.git" branch="master" }
 # workflow-http = { git = "git@github.com:workflow-rs/workflow-rs.git" branch="master" }

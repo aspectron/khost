@@ -133,7 +133,7 @@ impl From<&Config> for Vec<String> {
 
         match config.network {
             Network::Mainnet => {
-                args.push("--connect=38.242.201.109");
+                // args.push("--connect=38.242.201.109");
             }
             Network::Testnet10 => {
                 args.push("--testnet");
@@ -313,9 +313,17 @@ pub fn build(ctx: &Context) -> Result<()> {
         let folder = folder(&origin);
 
         step(format!("Building Kaspad p2p node ({})", origin), || {
-            cmd!("cargo", "build", "--release", "--bin", "kaspad")
-                .dir(&folder)
-                .run()
+            cmd!(
+                "cargo",
+                "build",
+                "--release",
+                "--bin",
+                "kaspad",
+                "--features",
+                "semaphore-trace"
+            )
+            .dir(&folder)
+            .run()
         })?;
 
         if let Some(version) = version(&origin) {
