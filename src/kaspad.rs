@@ -125,6 +125,10 @@ impl Config {
     pub fn set_origin(&mut self, origin: Origin) {
         self.origin = origin;
     }
+
+    pub fn origin_mut(&mut self) -> &mut Origin {
+        &mut self.origin
+    }
 }
 
 impl From<&Config> for Vec<String> {

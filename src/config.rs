@@ -1,5 +1,7 @@
 use crate::imports::*;
 
+const CONFIG_VERSION: u64 = 2;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub version: u64,
@@ -21,7 +23,7 @@ impl Config {
             .with_stats()
             .with_local_interface(8989);
 
-        let origin = Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("omega"))?;
+        let origin = Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("pnn-v1"))?;
         let kaspad = Network::into_iter()
             .map(|network| kaspad::Config::new(origin.clone(), network))
             .collect::<Vec<_>>();
@@ -29,7 +31,7 @@ impl Config {
         let nginx = nginx::Config::default();
 
         Ok(Config {
-            version: 1,
+            version: CONFIG_VERSION,
             bootstrap: false,
             disable_sudo_prompt: false,
             public: true,
@@ -48,7 +50,26 @@ impl Config {
         if !config_path.exists() {
             return Err(Error::custom("Config file not found"));
         }
-        Ok(serde_json::from_str(&fs::read_to_string(config_path)?)?)
+        let mut config: Config = serde_json::from_str(&fs::read_to_string(config_path)?)?;
+        
+        let mut update = false;
+        // Migrate old config
+        if config.version < 1 {
+            config.kaspad.iter_mut().for_each(|config| {
+                if let Some(branch) = config.origin_mut().branch_mut() {
+                    if branch == "omega" {
+                        *branch = "pnn-v1".to_string();
+                        update = true;
+                    }
+                }
+            });
+        }
+
+        if update {
+            config.save()?;
+        }
+
+        Ok(config)
     }
 
     pub fn save(&self) -> Result<()> {
