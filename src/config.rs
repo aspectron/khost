@@ -51,10 +51,10 @@ impl Config {
             return Err(Error::custom("Config file not found"));
         }
         let mut config: Config = serde_json::from_str(&fs::read_to_string(config_path)?)?;
-        
+
         let mut update = false;
         // Migrate old config
-        if config.version < 1 {
+        if config.version == 1 {
             config.kaspad.iter_mut().for_each(|config| {
                 if let Some(branch) = config.origin_mut().branch_mut() {
                     if branch == "omega" {
@@ -66,6 +66,11 @@ impl Config {
         }
 
         if update {
+            log::success(format!(
+                "Updated kHOST config to version {}",
+                CONFIG_VERSION
+            ))?;
+            config.version = CONFIG_VERSION;
             config.save()?;
         }
 
