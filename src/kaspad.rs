@@ -524,24 +524,31 @@ pub fn purge_data_folder(config: &Config) -> Result<()> {
 }
 
 pub fn check_for_updates(ctx: &Context) -> Result<bool> {
+    let mut verbose = true;
     let mut updates = Vec::new();
     for origin in unique_origins(ctx) {
         let path = folder(&origin);
 
-        let latest = git::latest_commit_hash(&origin, true)?;
-        let current = git::hash(path, true)?;
-        if latest != current {
-            log::info(format!(
-                "Kaspad p2p node update available ({origin}): {current} -> {latest}"
-            ))?;
-            updates.push((origin, current, latest));
+        if !path.exists() {
+            updates.push(origin);
+            verbose = false;
+        } else {
+            let latest = git::latest_commit_hash(&origin, true)?;
+            let current = git::hash(path, true)?;
+            if latest != current {
+                log::info(format!(
+                    "Kaspad p2p node update available ({origin}): {current} -> {latest}"
+                ))?;
+                updates.push(origin);
+            }
         }
     }
 
     if !updates.is_empty()
-        && confirm("Update Kaspad p2p node?")
-            .initial_value(true)
-            .interact()?
+        && (!verbose
+            || confirm("Update Kaspad p2p node?")
+                .initial_value(true)
+                .interact()?)
     {
         update(ctx)?;
         Ok(true)
