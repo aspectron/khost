@@ -290,10 +290,10 @@ pub fn status(config: &Config) -> Result<String> {
     systemd::status(config)
 }
 
-pub fn check_for_updates(ctx: &Context) -> Result<()> {
+pub fn check_for_updates(ctx: &Context) -> Result<bool> {
     let config = &ctx.config.resolver;
     if !config.enabled() {
-        return Ok(());
+        return Ok(false);
     }
     let mut updates = Vec::new();
     let origin = &config.origin;
@@ -314,9 +314,10 @@ pub fn check_for_updates(ctx: &Context) -> Result<()> {
             .interact()?
     {
         update(ctx)?;
+        Ok(true)
+    } else {
+        Ok(false)
     }
-
-    Ok(())
 }
 
 pub fn reconfigure(ctx: &mut Context, _force: bool) -> Result<()> {
@@ -332,7 +333,13 @@ pub fn reconfigure(ctx: &mut Context, _force: bool) -> Result<()> {
         && systemd::is_enabled(config.service_name())?
         && systemd::is_active(config.service_name())?
     {
-        restart(ctx)?;
+        step("Configuring 'kaspa-resolver'", || {
+            systemd::stop(config)?;
+            create_systemd_unit(ctx, &ctx.config.resolver)?;
+            systemd::daemon_reload()?;
+            systemd::start(config)?;
+            Ok(())
+        })?;
     } else {
         step("Configuring 'kaspa-resolver'", || {
             if config.enabled() {
@@ -349,7 +356,6 @@ pub fn reconfigure(ctx: &mut Context, _force: bool) -> Result<()> {
             Ok(())
         })?;
     }
-    // restart(ctx)?;
     Ok(())
 }
 

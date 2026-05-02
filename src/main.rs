@@ -71,14 +71,20 @@ fn main() {
 
     init_user_interaction();
 
-    if first_run {
+    let services_updated = if first_run {
         if let Err(err) = actions::Bootstrap::select(&mut ctx) {
             log::error(err).ok();
             log::info("You can attempt another full install from 'Advanced' menu").ok();
         }
+        false
     } else {
-        kaspad::check_for_updates(&ctx).ok();
-        resolver::check_for_updates(&ctx).ok();
+        let kaspad_update = kaspad::check_for_updates(&ctx).unwrap_or_default();
+        let resolver_update = resolver::check_for_updates(&ctx).unwrap_or_default();
+        kaspad_update || resolver_update
+    };
+
+    if let Err(err) = khost::reconfigure_if_needed(&mut ctx, services_updated) {
+        log::error(err).ok();
     }
 
     actions::Main::run(&mut ctx).ok();
