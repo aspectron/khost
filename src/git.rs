@@ -67,6 +67,10 @@ impl Origin {
         self.branch.as_deref()
     }
 
+    pub fn branch_mut(&mut self) -> &mut Option<String> {
+        &mut self.branch
+    }
+
     pub fn api_url(&self) -> String {
         let Origin {
             owner,
@@ -174,19 +178,19 @@ where
 
     #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     enum Preset {
-        Omega,
-        Delta,
+        PNNv1,
+        // Delta,
         Custom,
     }
 
     let preset = if name == "rusty-kaspa" {
         cliclack::select(format!("Select git origin for '{name}':"))
-            .item(Preset::Omega, "Omega (aspectron/omega - wRPC v2)", "")
-            .item(
-                Preset::Delta,
-                "Delta",
-                "(aspectron/delta - wRPC v2 + GD perf)",
-            )
+            .item(Preset::PNNv1, "pnn-v1 (aspectron/pnn-v1)", "")
+            // .item(
+            //     Preset::Delta,
+            //     "Delta",
+            //     "(aspectron/delta - wRPC v2 + GD perf)",
+            // )
             .item(Preset::Custom, "Custom", "")
             .interact()?
     } else {
@@ -194,12 +198,12 @@ where
     };
 
     let origin = match preset {
-        Preset::Omega => {
-            Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("omega"))?
+        Preset::PNNv1 => {
+            Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("pnn-v1"))?
         }
-        Preset::Delta => {
-            Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("delta"))?
-        }
+        // Preset::Delta => {
+        //     Origin::try_new("https://github.com/aspectron/rusty-kaspa", Some("delta"))?
+        // }
         Preset::Custom => {
             let mut input = cliclack::input("Enter GitHub repository owner/organization:")
                 .placeholder("")

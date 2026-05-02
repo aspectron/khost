@@ -128,6 +128,10 @@ impl Config {
     pub fn set_origin(&mut self, origin: Origin) {
         self.origin = origin;
     }
+
+    pub fn origin_mut(&mut self) -> &mut Origin {
+        &mut self.origin
+    }
 }
 
 impl From<&Config> for Vec<String> {
@@ -135,7 +139,9 @@ impl From<&Config> for Vec<String> {
         let mut args = Arglist::default();
 
         match config.network {
-            Network::Mainnet => {}
+            Network::Mainnet => {
+                // args.push("--connect=38.242.201.109");
+            }
             Network::Testnet10 => {
                 args.push("--testnet");
                 args.push("--netsuffix=10");
@@ -318,9 +324,17 @@ pub fn build(ctx: &Context) -> Result<()> {
         let folder = folder(&origin);
 
         step(format!("Building Kaspad p2p node ({})", origin), || {
-            cmd!("cargo", "build", "--release", "--bin", "kaspad")
-                .dir(&folder)
-                .run()
+            cmd!(
+                "cargo",
+                "build",
+                "--release",
+                "--bin",
+                "kaspad",
+                "--features",
+                "semaphore-trace"
+            )
+            .dir(&folder)
+            .run()
         })?;
 
         if let Some(version) = version(&origin) {
@@ -516,30 +530,38 @@ pub fn purge_data_folder(config: &Config) -> Result<()> {
     )
 }
 
-pub fn check_for_updates(ctx: &Context) -> Result<()> {
+pub fn check_for_updates(ctx: &Context) -> Result<bool> {
+    let mut verbose = true;
     let mut updates = Vec::new();
     for origin in unique_origins(ctx) {
         let path = folder(&origin);
 
-        let latest = git::latest_commit_hash(&origin, true)?;
-        let current = git::hash(path, true)?;
-        if latest != current {
-            log::info(format!(
-                "Kaspad p2p node update available ({origin}): {current} -> {latest}"
-            ))?;
-            updates.push((origin, current, latest));
+        if !path.exists() {
+            updates.push(origin);
+            verbose = false;
+        } else {
+            let latest = git::latest_commit_hash(&origin, true)?;
+            let current = git::hash(path, true)?;
+            if latest != current {
+                log::info(format!(
+                    "Kaspad p2p node update available ({origin}): {current} -> {latest}"
+                ))?;
+                updates.push(origin);
+            }
         }
     }
 
     if !updates.is_empty()
-        && confirm("Update Kaspad p2p node?")
-            .initial_value(true)
-            .interact()?
+        && (!verbose
+            || confirm("Update Kaspad p2p node?")
+                .initial_value(true)
+                .interact()?)
     {
         update(ctx)?;
+        Ok(true)
+    } else {
+        Ok(false)
     }
-
-    Ok(())
 }
 
 pub fn find_config_by_network<'a>(
