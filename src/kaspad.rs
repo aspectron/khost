@@ -173,6 +173,7 @@ impl From<&Config> for Vec<String> {
         args.push("--perf-metrics");
         args.push("--perf-metrics-interval-sec=1");
         args.push("--utxoindex");
+        args.push("--covenant-index");
 
         if config.perf_metrics_log {
             args.push("--loglevel=info,kaspad_lib::daemon=trace ");
